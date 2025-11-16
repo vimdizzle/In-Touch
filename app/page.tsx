@@ -5,42 +5,43 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 
+interface Contact {
+  id: string;
+  name: string;
+  relationship: string;
+  location?: string;
+  cadence_days: number;
+  last_contact_date?: string;
+  last_contact_channel?: string;
+  days_since_last_contact?: number;
+  status: "overdue" | "coming_up" | "on_track";
+  days_until_due?: number;
+  days_overdue?: number;
+}
+
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [contactCount, setContactCount] = useState(0);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setUser(session.user);
-        
-        // Check if user has contacts
-        const { count } = await supabase
-          .from("contacts")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", session.user.id);
-        
-        setContactCount(count || 0);
-        
-        // If no contacts, redirect to onboarding
-        if (count === 0) {
-          router.push("/onboarding");
-        }
+        await loadContacts(session.user.id);
       } else {
         router.push("/auth");
       }
       setLoading(false);
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser(session.user);
+        loadContacts(session.user.id);
       } else {
         router.push("/auth");
       }
@@ -49,10 +50,118 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, [router]);
 
+  const loadContacts = async (userId: string) => {
+    try {
+      // Fetch all contacts
+      const { data: contactsData, error: contactsError } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("user_id", userId)
+        .order("name", { ascending: true });
+
+      if (contactsError) throw contactsError;
+      if (!contactsData) return;
+
+      // For each contact, get the last touchpoint
+      const contactsWithStatus = await Promise.all(
+        contactsData.map(async (contact) => {
+          const { data: lastTouchpoint } = await supabase
+            .from("touchpoints")
+            .select("contact_date, channel")
+            .eq("contact_id", contact.id)
+            .order("contact_date", { ascending: false })
+            .limit(1)
+            .single();
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          let daysSinceLastContact: number | undefined;
+          let status: "overdue" | "coming_up" | "on_track" = "on_track";
+          let daysUntilDue: number | undefined;
+          let daysOverdue: number | undefined;
+
+          if (lastTouchpoint) {
+            const lastDate = new Date(lastTouchpoint.contact_date);
+            lastDate.setHours(0, 0, 0, 0);
+            daysSinceLastContact = Math.floor(
+              (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            const daysUntilNextDue = contact.cadence_days - daysSinceLastContact;
+
+            if (daysUntilNextDue < 0) {
+              status = "overdue";
+              daysOverdue = Math.abs(daysUntilNextDue);
+            } else if (daysUntilNextDue <= 7) {
+              status = "coming_up";
+              daysUntilDue = daysUntilNextDue;
+            } else {
+              status = "on_track";
+              daysUntilDue = daysUntilNextDue;
+            }
+          } else {
+            // No touchpoints yet - consider overdue if cadence has passed since creation
+            const createdDate = new Date(contact.created_at);
+            createdDate.setHours(0, 0, 0, 0);
+            daysSinceLastContact = Math.floor(
+              (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            if (daysSinceLastContact >= contact.cadence_days) {
+              status = "overdue";
+              daysOverdue = daysSinceLastContact - contact.cadence_days;
+            } else if (contact.cadence_days - daysSinceLastContact <= 7) {
+              status = "coming_up";
+              daysUntilDue = contact.cadence_days - daysSinceLastContact;
+            }
+          }
+
+          return {
+            ...contact,
+            last_contact_date: lastTouchpoint?.contact_date,
+            last_contact_channel: lastTouchpoint?.channel,
+            days_since_last_contact: daysSinceLastContact,
+            status,
+            days_until_due: daysUntilDue,
+            days_overdue: daysOverdue,
+          };
+        })
+      );
+
+      setContacts(contactsWithStatus);
+    } catch (error) {
+      console.error("Error loading contacts:", error);
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/auth");
   };
+
+  const formatCadence = (days: number) => {
+    if (days === 7) return "Weekly";
+    if (days === 30) return "Monthly";
+    if (days === 90) return "Quarterly";
+    if (days === 365) return "Yearly";
+    return `Every ${days} days`;
+  };
+
+  const formatLastContact = (contact: Contact) => {
+    if (!contact.last_contact_date) {
+      return "Never contacted";
+    }
+    const days = contact.days_since_last_contact || 0;
+    const channel = contact.last_contact_channel || "unknown";
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    return `${days} days ago (${channel})`;
+  };
+
+  const overdueContacts = contacts.filter((c) => c.status === "overdue");
+  const comingUpContacts = contacts.filter((c) => c.status === "coming_up");
+  const onTrackContacts = contacts.filter((c) => c.status === "on_track");
 
   if (loading) {
     return (
@@ -63,6 +172,12 @@ export default function Home() {
   }
 
   if (!user) {
+    return null;
+  }
+
+  // Check if user has contacts, redirect to onboarding if not
+  if (contacts.length === 0) {
+    router.push("/onboarding");
     return null;
   }
 
@@ -92,12 +207,194 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-8">
-          <p className="text-gray-400">
-            You have {contactCount} contact{contactCount !== 1 ? "s" : ""}. 
-            Slice 2 complete! Next: Display contacts in Today view.
-          </p>
-        </div>
+        {/* Overdue Section */}
+        {overdueContacts.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <h3 className="text-xl font-semibold">Overdue</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {overdueContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 hover:border-cyan-500/50 transition-all hover:scale-[1.02]"
+                >
+                  <div className="mb-4">
+                    <h4 className="text-lg font-semibold text-white mb-1">
+                      {contact.name}
+                    </h4>
+                    <p className="text-sm text-gray-400">
+                      {contact.relationship}
+                      {contact.location && ` • ${contact.location}`}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-300">
+                      {formatLastContact(contact)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
+                        {formatCadence(contact.cadence_days)}
+                      </span>
+                      <span className="text-xs text-red-400">
+                        Overdue by {contact.days_overdue} day
+                        {contact.days_overdue !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}?action=log`)}
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Log touchpoint
+                    </button>
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}`)}
+                      className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Coming Up Section */}
+        {comingUpContacts.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <h3 className="text-xl font-semibold">
+                Coming up in the next 7 days
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {comingUpContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 opacity-90 hover:opacity-100 hover:border-cyan-500/50 transition-all"
+                >
+                  <div className="mb-4">
+                    <h4 className="text-lg font-semibold text-white mb-1">
+                      {contact.name}
+                    </h4>
+                    <p className="text-sm text-gray-400">
+                      {contact.relationship}
+                      {contact.location && ` • ${contact.location}`}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-300">
+                      {formatLastContact(contact)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
+                        {formatCadence(contact.cadence_days)}
+                      </span>
+                      <span className="text-xs text-yellow-400">
+                        Due in {contact.days_until_due} day
+                        {contact.days_until_due !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}?action=log`)}
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Log touchpoint
+                    </button>
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}`)}
+                      className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* On Track Section (optional, can be collapsed) */}
+        {onTrackContacts.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-400 mb-4">
+              On Track ({onTrackContacts.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {onTrackContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 opacity-75 hover:opacity-100 hover:border-gray-700 transition-all"
+                >
+                  <div className="mb-4">
+                    <h4 className="text-lg font-semibold text-white mb-1">
+                      {contact.name}
+                    </h4>
+                    <p className="text-sm text-gray-400">
+                      {contact.relationship}
+                      {contact.location && ` • ${contact.location}`}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm text-gray-300">
+                      {formatLastContact(contact)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
+                        {formatCadence(contact.cadence_days)}
+                      </span>
+                      {contact.days_until_due !== undefined && (
+                        <span className="text-xs text-green-400">
+                          Due in {contact.days_until_due} days
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}?action=log`)}
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Log touchpoint
+                    </button>
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}`)}
+                      className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {contacts.length === 0 && (
+          <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-8 text-center">
+            <p className="text-gray-400 mb-4">No contacts yet.</p>
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-6 rounded-md transition-colors"
+            >
+              Add Your First Contact
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
