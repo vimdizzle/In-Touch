@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -20,7 +20,7 @@ interface Contact {
   relationship: string;
 }
 
-export default function LogTouchpointPage() {
+function LogTouchpointForm() {
   const [user, setUser] = useState<User | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
@@ -214,6 +214,18 @@ export default function LogTouchpointPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LogTouchpointPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <LogTouchpointForm />
+    </Suspense>
   );
 }
 
