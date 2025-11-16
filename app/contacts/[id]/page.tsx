@@ -9,10 +9,10 @@ interface Contact {
   id: string;
   name: string;
   relationship: string;
-  location?: string;
-  birthday?: string;
+  location?: string | null;
+  birthday?: string | null;
   cadence_days: number;
-  notes?: string;
+  notes?: string | null;
   created_at: string;
 }
 
@@ -133,7 +133,7 @@ function ContactDetailContent() {
 
       if (error) throw error;
 
-      setContact({ ...contact, notes: notes.trim() || null });
+      setContact({ ...contact, notes: notes.trim() || undefined });
       setEditingNotes(false);
     } catch (err: any) {
       alert(`Error saving notes: ${err.message}`);
