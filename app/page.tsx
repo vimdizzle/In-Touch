@@ -187,7 +187,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
-              TODAY'S MISSION
+              TODAY'S SNAPSHOT
             </h1>
             <h2 className="text-3xl font-bold">Here's who to reach out to.</h2>
           </div>
