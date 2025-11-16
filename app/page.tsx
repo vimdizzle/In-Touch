@@ -8,13 +8,27 @@ import type { User } from "@supabase/supabase-js";
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [contactCount, setContactCount] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
     // Check if user is logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setUser(session.user);
+        
+        // Check if user has contacts
+        const { count } = await supabase
+          .from("contacts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.user.id);
+        
+        setContactCount(count || 0);
+        
+        // If no contacts, redirect to onboarding
+        if (count === 0) {
+          router.push("/onboarding");
+        }
       } else {
         router.push("/auth");
       }
@@ -62,20 +76,26 @@ export default function Home() {
             </h1>
             <h2 className="text-3xl font-bold">Here's who to reach out to.</h2>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
-          >
-            Sign Out
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push("/onboarding")}
+              className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
+            >
+              + Add Contact
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
 
         <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-8">
           <p className="text-gray-400">
-            Welcome! Database schema is set up. Next: Add contacts functionality.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Email: {user.email}
+            You have {contactCount} contact{contactCount !== 1 ? "s" : ""}. 
+            Slice 2 complete! Next: Display contacts in Today view.
           </p>
         </div>
       </div>
