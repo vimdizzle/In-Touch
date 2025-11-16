@@ -247,7 +247,7 @@ export default function Home() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/contacts/${contact.id}?action=log`)}
+                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
                       className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
                     >
                       Log touchpoint
@@ -307,7 +307,7 @@ export default function Home() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/contacts/${contact.id}?action=log`)}
+                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
                       className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
                     >
                       Log touchpoint
@@ -365,7 +365,7 @@ export default function Home() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/contacts/${contact.id}?action=log`)}
+                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
                       className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
                     >
                       Log touchpoint
