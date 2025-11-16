@@ -199,6 +199,12 @@ export default function Home() {
               + Add Contact
             </button>
             <button
+              onClick={() => router.push("/settings")}
+              className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+            >
+              Settings
+            </button>
+            <button
               onClick={handleSignOut}
               className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
             >
