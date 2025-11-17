@@ -270,7 +270,7 @@ export default function AddContactPage() {
                   type="date"
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
-                  className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
+                  className="w-full max-w-full px-4 py-3 sm:py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border min-h-[44px] sm:min-h-0"
                   style={{ WebkitAppearance: 'none', appearance: 'none' }}
                 />
               </div>
@@ -283,7 +283,7 @@ export default function AddContactPage() {
                   type="date"
                   value={lastTouchpointDate}
                   onChange={(e) => setLastTouchpointDate(e.target.value)}
-                  className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
+                  className="w-full max-w-full px-4 py-3 sm:py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border min-h-[44px] sm:min-h-0"
                   style={{ WebkitAppearance: 'none', appearance: 'none' }}
                 />
                 <p className="text-xs text-gray-500 mt-1">
