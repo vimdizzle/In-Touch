@@ -48,6 +48,7 @@ export default function AddContactPage() {
   const [location, setLocation] = useState("");
   const [birthday, setBirthday] = useState("");
   const [notes, setNotes] = useState("");
+  const [lastTouchpointDate, setLastTouchpointDate] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -96,6 +97,25 @@ export default function AddContactPage() {
 
       if (error) throw error;
 
+      // If last touchpoint date is provided, create a touchpoint
+      if (lastTouchpointDate) {
+        const { error: touchpointError } = await supabase
+          .from("touchpoints")
+          .insert([
+            {
+              contact_id: data.id,
+              channel: "other",
+              contact_date: lastTouchpointDate,
+              note: "Initial touchpoint",
+            },
+          ]);
+
+        if (touchpointError) {
+          console.error("Error creating touchpoint:", touchpointError);
+          // Don't throw - contact was created successfully
+        }
+      }
+
       setContacts([...contacts, data]);
       
       // Reset form
@@ -103,6 +123,7 @@ export default function AddContactPage() {
       setLocation("");
       setBirthday("");
       setNotes("");
+      setLastTouchpointDate("");
       setRelationship("Friend");
       setCadenceDays(30);
     } catch (err: any) {

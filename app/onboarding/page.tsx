@@ -46,6 +46,7 @@ export default function OnboardingPage() {
   const [location, setLocation] = useState("");
   const [birthday, setBirthday] = useState("");
   const [notes, setNotes] = useState("");
+  const [lastTouchpointDate, setLastTouchpointDate] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -94,6 +95,25 @@ export default function OnboardingPage() {
 
       if (error) throw error;
 
+      // If last touchpoint date is provided, create a touchpoint
+      if (lastTouchpointDate) {
+        const { error: touchpointError } = await supabase
+          .from("touchpoints")
+          .insert([
+            {
+              contact_id: data.id,
+              channel: "other",
+              contact_date: lastTouchpointDate,
+              note: "Initial touchpoint",
+            },
+          ]);
+
+        if (touchpointError) {
+          console.error("Error creating touchpoint:", touchpointError);
+          // Don't throw - contact was created successfully
+        }
+      }
+
       setContacts([...contacts, data]);
       
       // Reset form
@@ -101,6 +121,7 @@ export default function OnboardingPage() {
       setLocation("");
       setBirthday("");
       setNotes("");
+      setLastTouchpointDate("");
       setRelationship("Friend");
       setCadenceDays(30);
     } catch (err: any) {
@@ -228,6 +249,22 @@ export default function OnboardingPage() {
                   className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
                   style={{ WebkitAppearance: 'none', appearance: 'none' }}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Last touchpoint (optional)
+                </label>
+                <input
+                  type="date"
+                  value={lastTouchpointDate}
+                  onChange={(e) => setLastTouchpointDate(e.target.value)}
+                  className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
+                  style={{ WebkitAppearance: 'none', appearance: 'none' }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  When did you last contact this person? This helps us know when to remind you next.
+                </p>
               </div>
 
               <div>
