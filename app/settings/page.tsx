@@ -169,7 +169,7 @@ export default function SettingsPage() {
             onClick={() => router.push("/")}
             className="text-gray-400 hover:text-white mb-4 flex items-center gap-2"
           >
-            ← Back to Today
+← Back
           </button>
           <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
             SETTINGS
