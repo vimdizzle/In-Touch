@@ -159,8 +159,7 @@ export default function Home() {
     return `${days} days ago (${channel})`;
   };
 
-  const overdueContacts = contacts.filter((c) => c.status === "overdue");
-  const comingUpContacts = contacts.filter((c) => c.status === "coming_up");
+  const comingUpContacts = contacts.filter((c) => c.status === "coming_up" || c.status === "overdue");
   const onTrackContacts = contacts.filter((c) => c.status === "on_track");
 
   if (loading) {
@@ -218,65 +217,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Overdue Section */}
-        {overdueContacts.length > 0 && (
-          <div className="mb-8">
-            <div className="mb-4">
-              <h3 className="text-2xl font-bold text-white">Overdue</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {overdueContacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 hover:border-cyan-500/50 transition-all hover:scale-[1.02]"
-                >
-                  <div className="mb-4">
-                    <h4 className="text-lg font-semibold text-white mb-1">
-                      {contact.name}
-                    </h4>
-                    <p className="text-sm text-gray-400">
-                      {contact.relationship}
-                      {contact.location && ` • ${contact.location}`}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-300">
-                      {formatLastContact(contact)}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
-                        {formatCadence(contact.cadence_days)}
-                      </span>
-                      <span className="text-xs text-red-400">
-                        Overdue by {contact.days_overdue} day
-                        {contact.days_overdue !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 sm:px-4 rounded-md text-sm font-medium transition-colors"
-                    >
-                      <span className="hidden sm:inline">Log touchpoint</span>
-                      <span className="sm:hidden">Log</span>
-                    </button>
-                    <button
-                      onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Coming Up Section */}
+        {/* Coming Up Section (includes overdue) */}
         {comingUpContacts.length > 0 && (
           <div className="mb-8">
             <div className="mb-4">
@@ -308,10 +249,17 @@ export default function Home() {
                       <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
                         {formatCadence(contact.cadence_days)}
                       </span>
-                      <span className="text-xs text-yellow-400">
-                        Due in {contact.days_until_due} day
-                        {contact.days_until_due !== 1 ? "s" : ""}
-                      </span>
+                      {contact.status === "overdue" && contact.days_overdue !== undefined ? (
+                        <span className="text-xs text-red-400">
+                          Overdue by {contact.days_overdue} day
+                          {contact.days_overdue !== 1 ? "s" : ""}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-yellow-400">
+                          Due in {contact.days_until_due} day
+                          {contact.days_until_due !== 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
                   </div>
 
