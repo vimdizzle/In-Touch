@@ -144,6 +144,28 @@ function ContactDetailContent() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!contact || !user) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("contacts")
+        .delete()
+        .eq("id", contactId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      // Redirect to home page after successful deletion
+      router.push("/");
+    } catch (err: any) {
+      alert(`Error deleting contact: ${err.message}`);
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -408,6 +430,45 @@ function ContactDetailContent() {
             </div>
           </div>
         </div>
+
+        {/* Delete Button */}
+        <div className="mt-8 pt-8 border-t border-gray-800">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleting}
+            className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            {deleting ? "Deleting..." : "Delete Contact"}
+          </button>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-xl font-semibold text-white mb-2">Delete Contact</h3>
+              <p className="text-gray-400 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-white">{contact?.name}</span>? This action cannot be undone and will also delete all associated touchpoints.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
