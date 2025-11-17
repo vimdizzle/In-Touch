@@ -190,7 +190,7 @@ export default function Home() {
           </h1>
           <div className="flex gap-2 sm:gap-3 items-center">
             <button
-              onClick={() => router.push("/onboarding")}
+              onClick={() => router.push("/add-contact")}
               className="px-3 sm:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
             >
               <span className="hidden sm:inline">+ Add Contact</span>
