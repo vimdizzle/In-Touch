@@ -249,7 +249,7 @@ function ContactDetailContent() {
             onClick={() => router.push("/")}
             className="text-gray-400 hover:text-white mb-4 flex items-center gap-2"
           >
-            ← Back to Today
+← Back
           </button>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>

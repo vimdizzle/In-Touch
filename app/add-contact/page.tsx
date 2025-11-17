@@ -37,6 +37,8 @@ export default function AddContactPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
 
   // Form state
@@ -107,6 +109,29 @@ export default function AddContactPage() {
       alert(`Error adding contact: ${err.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (contactId: string) => {
+    if (!user) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("contacts")
+        .delete()
+        .eq("id", contactId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setContacts(contacts.filter((c) => c.id !== contactId));
+      setShowDeleteConfirm(null);
+    } catch (err: any) {
+      alert(`Error deleting contact: ${err.message}`);
+    } finally {
+      setDeleting(false);
     }
   };
 
