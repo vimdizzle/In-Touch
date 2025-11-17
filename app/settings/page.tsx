@@ -129,8 +129,6 @@ export default function SettingsPage() {
         if (nameOnlyError) throw nameOnlyError;
       }
 
-      if (updateError) throw updateError;
-
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
