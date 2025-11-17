@@ -277,6 +277,22 @@ export default function AddContactPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Last touchpoint (optional)
+                </label>
+                <input
+                  type="date"
+                  value={lastTouchpointDate}
+                  onChange={(e) => setLastTouchpointDate(e.target.value)}
+                  className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
+                  style={{ WebkitAppearance: 'none', appearance: 'none' }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  When did you last contact this person? This helps us know when to remind you next.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Notes (optional)
                 </label>
                 <textarea
