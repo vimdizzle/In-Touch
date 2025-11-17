@@ -67,9 +67,6 @@ export default function AuthPage() {
           <h2 className="text-2xl font-bold text-white mb-2">
             Stay in touch with the people who matter.
           </h2>
-          <p className="text-gray-400 text-sm italic">
-            Because the best relationships deserve consistency.
-          </p>
         </div>
 
         <form onSubmit={handleAuth} className="space-y-4">

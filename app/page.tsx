@@ -187,9 +187,8 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
-              TODAY'S SNAPSHOT
+              IN TOUCH
             </h1>
-            <h2 className="text-2xl sm:text-3xl font-bold">Here's who you're in touch with.</h2>
           </div>
           <div className="flex gap-2 sm:gap-3 flex-wrap">
             <button
@@ -278,8 +277,8 @@ export default function Home() {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <h3 className="text-xl font-semibold">
-                Get in touch with:
+              <h3 className="text-2xl font-bold text-white">
+                Get in touch:
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -337,8 +336,8 @@ export default function Home() {
         {/* On Track Section (optional, can be collapsed) */}
         {onTrackContacts.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-400 mb-4">
-              In touch: ({onTrackContacts.length})
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Already in touch:
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {onTrackContacts.map((contact) => (
