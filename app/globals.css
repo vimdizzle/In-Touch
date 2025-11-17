@@ -11,3 +11,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Fix date/time inputs on mobile */
+input[type="date"],
+input[type="time"] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Ensure date/time inputs don't overflow on mobile */
+@media (max-width: 640px) {
+  input[type="date"],
+  input[type="time"] {
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-width: 0;
+  }
+}
+

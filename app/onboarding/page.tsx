@@ -225,7 +225,8 @@ export default function OnboardingPage() {
                   type="date"
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base"
+                  className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
+                  style={{ WebkitAppearance: 'none', appearance: 'none' }}
                 />
               </div>
 
@@ -291,8 +292,7 @@ export default function OnboardingPage() {
                 onClick={handleFinish}
                 className="w-full mt-6 bg-cyan-500 text-white py-3 px-4 rounded-md hover:bg-cyan-600 transition-colors font-medium"
               >
-                <span className="hidden sm:inline">Finish & Go to Dashboard</span>
-                <span className="sm:hidden">Finish</span>
+                Finish
               </button>
             )}
           </div>
