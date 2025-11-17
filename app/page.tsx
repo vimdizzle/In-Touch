@@ -183,30 +183,31 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
               TODAY'S SNAPSHOT
             </h1>
-            <h2 className="text-3xl font-bold">Here's who to reach out to.</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">Here's who to reach out to.</h2>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
             <button
               onClick={() => router.push("/onboarding")}
-              className="px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
+              className="px-3 sm:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
             >
-              + Add Contact
+              <span className="hidden sm:inline">+ Add Contact</span>
+              <span className="sm:hidden">+ Add</span>
             </button>
             <button
               onClick={() => router.push("/settings")}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+              className="px-3 sm:px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
             >
               Settings
             </button>
             <button
               onClick={handleSignOut}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+              className="px-3 sm:px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
             >
               Sign Out
             </button>
@@ -254,9 +255,10 @@ export default function Home() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 sm:px-4 rounded-md text-sm font-medium transition-colors"
                     >
-                      Log touchpoint
+                      <span className="hidden sm:inline">Log touchpoint</span>
+                      <span className="sm:hidden">Log</span>
                     </button>
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
@@ -314,9 +316,10 @@ export default function Home() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 sm:px-4 rounded-md text-sm font-medium transition-colors"
                     >
-                      Log touchpoint
+                      <span className="hidden sm:inline">Log touchpoint</span>
+                      <span className="sm:hidden">Log</span>
                     </button>
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
@@ -372,9 +375,10 @@ export default function Home() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 sm:px-4 rounded-md text-sm font-medium transition-colors"
                     >
-                      Log touchpoint
+                      <span className="hidden sm:inline">Log touchpoint</span>
+                      <span className="sm:hidden">Log</span>
                     </button>
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}

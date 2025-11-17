@@ -124,7 +124,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-4xl mx-auto p-4 sm:p-8">
         <div className="mb-8">
           <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
             ONBOARDING
@@ -137,7 +137,7 @@ export default function OnboardingPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Add Contact Form */}
-          <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-6">
+          <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">Add Contact</h3>
             <form onSubmit={handleAddContact} className="space-y-4">
               <div>
@@ -253,7 +253,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* Contacts List */}
-          <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-6">
+          <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">
               Your Contacts ({contacts.length})
             </h3>
@@ -291,7 +291,8 @@ export default function OnboardingPage() {
                 onClick={handleFinish}
                 className="w-full mt-6 bg-cyan-500 text-white py-3 px-4 rounded-md hover:bg-cyan-600 transition-colors font-medium"
               >
-                Finish & Go to Dashboard
+                <span className="hidden sm:inline">Finish & Go to Dashboard</span>
+                <span className="sm:hidden">Finish</span>
               </button>
             )}
           </div>
