@@ -64,14 +64,25 @@ export default function SettingsPage() {
         // Create user profile if it doesn't exist
         const { data: newUser } = await supabase.auth.getUser();
         if (newUser.user) {
-          await supabase.from("users").insert([
-            {
-              id: newUser.user.id,
-              email: newUser.user.email,
-              daily_reminder_time: "09:00",
-              default_cadence_days: 30,
-            },
-          ]);
+          // Only insert fields that exist (graceful fallback)
+          const insertData: any = {
+            id: newUser.user.id,
+            email: newUser.user.email,
+          };
+          
+          // Try to include settings fields, but don't fail if they don't exist
+          try {
+            await supabase.from("users").insert([
+              {
+                ...insertData,
+                daily_reminder_time: "09:00",
+                default_cadence_days: 30,
+              },
+            ]);
+          } catch {
+            // If columns don't exist, just insert basic fields
+            await supabase.from("users").insert([insertData]);
+          }
         }
       }
     } catch (err) {
