@@ -49,6 +49,8 @@ function ContactDetailContent() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState("");
   const [cadenceDays, setCadenceDays] = useState(30);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const router = useRouter();
   const params = useParams();
