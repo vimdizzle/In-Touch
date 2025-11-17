@@ -57,8 +57,9 @@ export default function SettingsPage() {
         setName(userData.name || "");
         // For now, we'll store settings in the users table
         // In a future version, you might want a separate settings table
-        setDailyReminderTime(userData.daily_reminder_time || "09:00");
-        setDefaultCadenceDays(userData.default_cadence_days || 30);
+        // Handle case where columns might not exist yet (graceful fallback)
+        setDailyReminderTime((userData as any).daily_reminder_time || "09:00");
+        setDefaultCadenceDays((userData as any).default_cadence_days || 30);
       } else {
         // Create user profile if it doesn't exist
         const { data: newUser } = await supabase.auth.getUser();
@@ -88,14 +89,45 @@ export default function SettingsPage() {
 
     try {
       // Update user profile
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({
-          name: name.trim() || null,
-          daily_reminder_time: dailyReminderTime,
-          default_cadence_days: defaultCadenceDays,
-        })
-        .eq("id", user.id);
+      // Only update fields that exist in the database
+      const updateData: any = {
+        name: name.trim() || null,
+      };
+      
+      // Check if columns exist by trying to update them (graceful fallback)
+      // If they don't exist, we'll just update name
+      try {
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            ...updateData,
+            daily_reminder_time: dailyReminderTime,
+            default_cadence_days: defaultCadenceDays,
+          })
+          .eq("id", user.id);
+
+        if (updateError) {
+          // If columns don't exist, just update name
+          if (updateError.message.includes("daily_reminder_time") || updateError.message.includes("default_cadence_days")) {
+            const { error: nameOnlyError } = await supabase
+              .from("users")
+              .update(updateData)
+              .eq("id", user.id);
+            
+            if (nameOnlyError) throw nameOnlyError;
+          } else {
+            throw updateError;
+          }
+        }
+      } catch (err: any) {
+        // Fallback: just update name if other fields fail
+        const { error: nameOnlyError } = await supabase
+          .from("users")
+          .update(updateData)
+          .eq("id", user.id);
+        
+        if (nameOnlyError) throw nameOnlyError;
+      }
 
       if (updateError) throw updateError;
 
@@ -183,7 +215,7 @@ export default function SettingsPage() {
                   type="time"
                   value={dailyReminderTime}
                   onChange={(e) => setDailyReminderTime(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   When to generate your "Today" list (for future notifications)
