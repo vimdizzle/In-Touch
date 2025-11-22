@@ -307,13 +307,13 @@ export default function Home() {
         </div>
 
         {/* Coming Up Section (includes overdue) */}
-        {comingUpContacts.length > 0 && (
-          <div className="mb-8">
-            <div className="mb-4">
-              <h3 className="text-2xl font-bold text-white">
-                Get in touch:
-              </h3>
-            </div>
+        <div className="mb-8">
+          <div className="mb-4">
+            <h3 className="text-2xl font-bold text-white">
+              Get in touch:
+            </h3>
+          </div>
+          {comingUpContacts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {comingUpContacts.map((contact) => (
                 <div
@@ -326,13 +326,13 @@ export default function Home() {
                     </h4>
                     <p className="text-sm text-gray-400">
                       {contact.relationship}
-                      {contact.location && ` • ${contact.location}`}
+                      {contact.location && (
+                        <>
+                          {` • ${contact.location}`}
+                          {getLocalTime(contact.location) && ` (${getLocalTime(contact.location)})`}
+                        </>
+                      )}
                     </p>
-                    {contact.location && getLocalTime(contact.location) && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        🕐 {getLocalTime(contact.location)}
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2 mb-4">
