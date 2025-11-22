@@ -47,8 +47,13 @@ function ContactDetailContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState("");
   const [cadenceDays, setCadenceDays] = useState(30);
+  const [editName, setEditName] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editBirthday, setEditBirthday] = useState("");
+  const [editCadenceDays, setEditCadenceDays] = useState(30);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -86,6 +91,10 @@ function ContactDetailContent() {
     setContact(data);
     setNotes(data.notes || "");
     setCadenceDays(data.cadence_days);
+    setEditName(data.name);
+    setEditLocation(data.location || "");
+    setEditBirthday(data.birthday || "");
+    setEditCadenceDays(data.cadence_days);
   };
 
   const loadTouchpoints = async () => {
@@ -142,6 +151,49 @@ function ContactDetailContent() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!contact || !user) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("contacts")
+        .update({
+          name: editName.trim(),
+          location: editLocation.trim() || null,
+          birthday: editBirthday || null,
+          cadence_days: editCadenceDays,
+        })
+        .eq("id", contactId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setContact({
+        ...contact,
+        name: editName.trim(),
+        location: editLocation.trim() || null,
+        birthday: editBirthday || null,
+        cadence_days: editCadenceDays,
+      });
+      setCadenceDays(editCadenceDays);
+      setEditing(false);
+    } catch (err: any) {
+      alert(`Error saving contact: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (!contact) return;
+    setEditName(contact.name);
+    setEditLocation(contact.location || "");
+    setEditBirthday(contact.birthday || "");
+    setEditCadenceDays(contact.cadence_days);
+    setEditing(false);
   };
 
   const handleDelete = async () => {
@@ -256,20 +308,84 @@ function ContactDetailContent() {
               <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
                 CONTACT DETAIL
               </h1>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-2">{contact.name}</h2>
-              <p className="text-gray-400 text-sm sm:text-base">
-                {contact.relationship}
-                {contact.location && ` • ${contact.location}`}
-                {contact.birthday && ` • Birthday: ${formatDate(contact.birthday)}`}
-              </p>
+              {editing ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={editLocation}
+                      onChange={(e) => setEditLocation(e.target.value)}
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="New York, NY"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Birthday
+                    </label>
+                    <input
+                      type="date"
+                      value={editBirthday}
+                      onChange={(e) => setEditBirthday(e.target.value)}
+                      className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
+                      style={{ WebkitAppearance: 'none', appearance: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Cadence (days)
+                    </label>
+                    <input
+                      type="number"
+                      value={editCadenceDays}
+                      onChange={(e) => setEditCadenceDays(parseInt(e.target.value) || 30)}
+                      min="1"
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {CADENCE_PRESETS.map((preset) => (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          onClick={() => setEditCadenceDays(preset.days)}
+                          className={`px-3 py-1 text-sm rounded-md border transition-colors ${
+                            editCadenceDays === preset.days
+                              ? "bg-cyan-500 border-cyan-500 text-white"
+                              : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-3xl sm:text-4xl font-bold mb-2">{contact.name}</h2>
+                  <p className="text-gray-400 text-sm sm:text-base">
+                    {contact.relationship}
+                    {contact.location && ` • ${contact.location}`}
+                    {contact.birthday && ` • Birthday: ${formatDate(contact.birthday)}`}
+                  </p>
+                </>
+              )}
             </div>
-            <button
-              onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 sm:px-6 rounded-md transition-colors font-medium text-sm sm:text-base"
-            >
-              <span className="hidden sm:inline">Log touchpoint</span>
-              <span className="sm:hidden">Log</span>
-            </button>
           </div>
         </div>
 
@@ -277,47 +393,49 @@ function ContactDetailContent() {
           {/* Left Column */}
           <div className="space-y-6">
             {/* Cadence Card */}
-            <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
-              <h3 className="text-lg font-semibold mb-4">Cadence</h3>
-              <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Connect every</p>
-                <div className="flex items-center gap-2 mb-4">
-                  <input
-                    type="number"
-                    value={cadenceDays}
-                    onChange={(e) => setCadenceDays(parseInt(e.target.value) || 30)}
-                    min="1"
-                    className="w-24 px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
-                  <span className="text-gray-400">days</span>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {CADENCE_PRESETS.map((preset) => (
+            {!editing && (
+              <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg font-semibold mb-4">Cadence</h3>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-400 mb-2">Connect every</p>
+                  <div className="flex items-center gap-2 mb-4">
+                    <input
+                      type="number"
+                      value={cadenceDays}
+                      onChange={(e) => setCadenceDays(parseInt(e.target.value) || 30)}
+                      min="1"
+                      className="w-24 px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                    <span className="text-gray-400">days</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {CADENCE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.days}
+                        onClick={() => handleUpdateCadence(preset.days)}
+                        disabled={saving}
+                        className={`px-3 py-1 text-sm rounded-md border transition-colors ${
+                          cadenceDays === preset.days
+                            ? "bg-cyan-500 border-cyan-500 text-white"
+                            : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                        } disabled:opacity-50`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  {cadenceDays !== contact.cadence_days && (
                     <button
-                      key={preset.days}
-                      onClick={() => handleUpdateCadence(preset.days)}
+                      onClick={() => handleUpdateCadence(cadenceDays)}
                       disabled={saving}
-                      className={`px-3 py-1 text-sm rounded-md border transition-colors ${
-                        cadenceDays === preset.days
-                          ? "bg-cyan-500 border-cyan-500 text-white"
-                          : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
-                      } disabled:opacity-50`}
+                      className="text-sm text-cyan-400 hover:text-cyan-300"
                     >
-                      {preset.label}
+                      Save custom cadence
                     </button>
-                  ))}
+                  )}
                 </div>
-                {cadenceDays !== contact.cadence_days && (
-                  <button
-                    onClick={() => handleUpdateCadence(cadenceDays)}
-                    disabled={saving}
-                    className="text-sm text-cyan-400 hover:text-cyan-300"
-                  >
-                    Save custom cadence
-                  </button>
-                )}
               </div>
-            </div>
+            )}
 
             {/* Status Card */}
             <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
@@ -398,7 +516,16 @@ function ContactDetailContent() {
           {/* Right Column - Touchpoints */}
           <div>
             <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
-              <h3 className="text-lg font-semibold mb-4">Touchpoints</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Touchpoints</h3>
+                <button
+                  onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md transition-colors font-medium text-sm"
+                >
+                  <span className="hidden sm:inline">Log touchpoint</span>
+                  <span className="sm:hidden">Log</span>
+                </button>
+              </div>
               {touchpoints.length === 0 ? (
                 <p className="text-gray-400 text-sm">
                   No touchpoints yet. Log your first interaction above.
@@ -431,15 +558,44 @@ function ContactDetailContent() {
           </div>
         </div>
 
-        {/* Delete Button */}
+        {/* Edit and Delete Buttons */}
         <div className="mt-8 pt-8 border-t border-gray-800">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={deleting}
-            className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
-          >
-            {deleting ? "Deleting..." : "Delete Contact"}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {editing ? (
+              <>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={saving || !editName.trim()}
+                  className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                  className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setEditing(true)}
+                  className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                  className="px-6 py-3 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleting ? "Deleting..." : "Delete Contact"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Delete Confirmation Modal */}
