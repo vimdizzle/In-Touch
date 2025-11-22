@@ -309,7 +309,7 @@ export default function Home() {
         </div>
 
         {/* Coming Up Section (includes overdue) */}
-        {(comingUpContacts.length > 0 || (!searchQuery.trim() && allComingUpContacts.length > 0)) && (
+        {(comingUpContacts.length > 0 || !searchQuery.trim()) && (
           <div className="mb-8">
             <div className="mb-4">
               <h3 className="text-2xl font-bold text-white">
@@ -389,7 +389,7 @@ export default function Home() {
         )}
 
         {/* On Track Section (optional, can be collapsed) */}
-        {(onTrackContacts.length > 0 || (!searchQuery.trim() && allOnTrackContacts.length > 0)) && (
+        {(onTrackContacts.length > 0 || !searchQuery.trim()) && (
           <div className="mb-8">
             <h3 className="text-2xl font-bold text-white mb-4">
               Already in touch:
