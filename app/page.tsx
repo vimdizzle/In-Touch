@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import cityTimezones from "city-timezones";
 
 interface Contact {
   id: string;
@@ -159,75 +160,49 @@ export default function Home() {
     return `${days} days ago (${channel})`;
   };
 
-  // Map common locations to timezones
+  // Map locations to timezones using city-timezones library
   const getTimezoneFromLocation = (location?: string): string | null => {
     if (!location) return null;
     
-    const locationLower = location.toLowerCase();
+    const locationLower = location.toLowerCase().trim();
     
-    // Common city to timezone mappings
-    const timezoneMap: { [key: string]: string } = {
-      // US Cities
-      "new york": "America/New_York",
-      "ny": "America/New_York",
-      "nyc": "America/New_York",
-      "los angeles": "America/Los_Angeles",
-      "la": "America/Los_Angeles",
-      "san francisco": "America/Los_Angeles",
-      "sf": "America/Los_Angeles",
-      "chicago": "America/Chicago",
-      "houston": "America/Chicago",
-      "dallas": "America/Chicago",
-      "denver": "America/Denver",
-      "phoenix": "America/Phoenix",
-      "seattle": "America/Los_Angeles",
-      "portland": "America/Los_Angeles",
-      "boston": "America/New_York",
-      "miami": "America/New_York",
-      "atlanta": "America/New_York",
-      "washington": "America/New_York",
-      "dc": "America/New_York",
-      // International Cities
-      "london": "Europe/London",
-      "paris": "Europe/Paris",
-      "berlin": "Europe/Berlin",
-      "rome": "Europe/Rome",
-      "madrid": "Europe/Madrid",
-      "amsterdam": "Europe/Amsterdam",
-      "tokyo": "Asia/Tokyo",
-      "beijing": "Asia/Shanghai",
-      "shanghai": "Asia/Shanghai",
-      "hong kong": "Asia/Hong_Kong",
-      "singapore": "Asia/Singapore",
-      "sydney": "Australia/Sydney",
-      "melbourne": "Australia/Melbourne",
-      "toronto": "America/Toronto",
-      "vancouver": "America/Vancouver",
-      "mumbai": "Asia/Kolkata",
-      "delhi": "Asia/Kolkata",
-      "bangalore": "Asia/Kolkata",
-      "dubai": "Asia/Dubai",
-      "tel aviv": "Asia/Jerusalem",
-      "jerusalem": "Asia/Jerusalem",
-      "são paulo": "America/Sao_Paulo",
-      "sao paulo": "America/Sao_Paulo",
-      "rio de janeiro": "America/Sao_Paulo",
-      "mexico city": "America/Mexico_City",
-      "buenos aires": "America/Argentina/Buenos_Aires",
-    };
-
-    // Check for exact matches first
-    if (timezoneMap[locationLower]) {
-      return timezoneMap[locationLower];
+    // Try to find the city in the location string
+    // Handle formats like "New York, NY", "NYC", "New York", etc.
+    
+    // First, try to find an exact or partial match using city-timezones
+    const cityMatches = cityTimezones.lookupViaCity(location);
+    
+    if (cityMatches && cityMatches.length > 0) {
+      // Return the first match's timezone
+      return cityMatches[0].timezone;
     }
-
-    // Check for partial matches (e.g., "New York, NY" contains "new york")
-    for (const [key, timezone] of Object.entries(timezoneMap)) {
-      if (locationLower.includes(key)) {
-        return timezone;
+    
+    // If no direct match, try to extract city name from common formats
+    // e.g., "New York, NY" -> "New York"
+    const cityName = locationLower.split(',')[0].trim();
+    if (cityName && cityName !== locationLower) {
+      const cityMatches2 = cityTimezones.lookupViaCity(cityName);
+      if (cityMatches2 && cityMatches2.length > 0) {
+        return cityMatches2[0].timezone;
       }
     }
-
+    
+    // Try common abbreviations and aliases
+    const abbreviations: { [key: string]: string } = {
+      "ny": "New York",
+      "nyc": "New York",
+      "la": "Los Angeles",
+      "sf": "San Francisco",
+      "dc": "Washington",
+    };
+    
+    if (abbreviations[locationLower]) {
+      const cityMatches3 = cityTimezones.lookupViaCity(abbreviations[locationLower]);
+      if (cityMatches3 && cityMatches3.length > 0) {
+        return cityMatches3[0].timezone;
+      }
+    }
+    
     return null;
   };
 
