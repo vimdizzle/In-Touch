@@ -24,6 +24,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -151,13 +152,13 @@ export default function Home() {
 
   const formatLastContact = (contact: Contact) => {
     if (!contact.last_contact_date) {
-      return "Never contacted";
+      return "Last touch: Never contacted";
     }
     const days = contact.days_since_last_contact || 0;
     const channel = contact.last_contact_channel || "unknown";
-    if (days === 0) return "Today";
-    if (days === 1) return "Yesterday";
-    return `${days} days ago (${channel})`;
+    if (days === 0) return "Last touch: Today";
+    if (days === 1) return "Last touch: Yesterday";
+    return `Last touch: ${days} days ago (${channel})`;
   };
 
   // Map locations to timezones using city-timezones library
@@ -224,8 +225,24 @@ export default function Home() {
     }
   };
 
-  const comingUpContacts = contacts.filter((c) => c.status === "coming_up" || c.status === "overdue");
-  const onTrackContacts = contacts.filter((c) => c.status === "on_track");
+  // Filter contacts by search query
+  const filterContacts = (contactList: Contact[]) => {
+    if (!searchQuery.trim()) return contactList;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return contactList.filter((contact) => {
+      const nameMatch = contact.name.toLowerCase().includes(query);
+      const relationshipMatch = contact.relationship.toLowerCase().includes(query);
+      const locationMatch = contact.location?.toLowerCase().includes(query);
+      return nameMatch || relationshipMatch || locationMatch;
+    });
+  };
+
+  const allComingUpContacts = contacts.filter((c) => c.status === "coming_up" || c.status === "overdue");
+  const allOnTrackContacts = contacts.filter((c) => c.status === "on_track");
+  
+  const comingUpContacts = filterContacts(allComingUpContacts);
+  const onTrackContacts = filterContacts(allOnTrackContacts);
 
   if (loading) {
     return (
@@ -253,6 +270,13 @@ export default function Home() {
             IN TOUCH
           </h1>
           <div className="flex gap-2 sm:gap-3 items-center">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search contacts..."
+              className="px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500 w-48 sm:w-64"
+            />
             <button
               onClick={() => router.push("/add-contact")}
               className="px-3 sm:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
