@@ -375,8 +375,14 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-8 text-center">
+              <p className="text-gray-400 text-lg">
+                🎉 You're all caught up!
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* On Track Section (optional, can be collapsed) */}
         {onTrackContacts.length > 0 && (
