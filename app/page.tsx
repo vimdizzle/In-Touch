@@ -396,13 +396,13 @@ export default function Home() {
                     </h4>
                     <p className="text-sm text-gray-400">
                       {contact.relationship}
-                      {contact.location && ` • ${contact.location}`}
+                      {contact.location && (
+                        <>
+                          {` • ${contact.location}`}
+                          {getLocalTime(contact.location) && ` (${getLocalTime(contact.location)})`}
+                        </>
+                      )}
                     </p>
-                    {contact.location && getLocalTime(contact.location) && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        🕐 {getLocalTime(contact.location)}
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2 mb-4">
