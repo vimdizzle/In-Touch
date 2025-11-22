@@ -282,7 +282,7 @@ export default function Home() {
               IN TOUCH
             </h1>
             <div className="flex gap-2 sm:gap-3 items-center">
-              {/* Search icon button - desktop only */}
+              {/* Search icon button */}
               <button
                 onClick={() => {
                   setIsSearchOpen(!isSearchOpen);
@@ -294,7 +294,7 @@ export default function Home() {
                     }, 0);
                   }
                 }}
-                className="hidden sm:flex p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                className="p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                 title="Search"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -306,7 +306,7 @@ export default function Home() {
                 className="px-3 sm:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
               >
                 <span className="hidden sm:inline">+ Add Contact</span>
-                <span className="sm:hidden">+ Add</span>
+                <span className="sm:hidden">+</span>
               </button>
               <button
                 onClick={() => router.push("/settings")}
