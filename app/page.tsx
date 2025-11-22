@@ -159,6 +159,96 @@ export default function Home() {
     return `${days} days ago (${channel})`;
   };
 
+  // Map common locations to timezones
+  const getTimezoneFromLocation = (location?: string): string | null => {
+    if (!location) return null;
+    
+    const locationLower = location.toLowerCase();
+    
+    // Common city to timezone mappings
+    const timezoneMap: { [key: string]: string } = {
+      // US Cities
+      "new york": "America/New_York",
+      "ny": "America/New_York",
+      "nyc": "America/New_York",
+      "los angeles": "America/Los_Angeles",
+      "la": "America/Los_Angeles",
+      "san francisco": "America/Los_Angeles",
+      "sf": "America/Los_Angeles",
+      "chicago": "America/Chicago",
+      "houston": "America/Chicago",
+      "dallas": "America/Chicago",
+      "denver": "America/Denver",
+      "phoenix": "America/Phoenix",
+      "seattle": "America/Los_Angeles",
+      "portland": "America/Los_Angeles",
+      "boston": "America/New_York",
+      "miami": "America/New_York",
+      "atlanta": "America/New_York",
+      "washington": "America/New_York",
+      "dc": "America/New_York",
+      // International Cities
+      "london": "Europe/London",
+      "paris": "Europe/Paris",
+      "berlin": "Europe/Berlin",
+      "rome": "Europe/Rome",
+      "madrid": "Europe/Madrid",
+      "amsterdam": "Europe/Amsterdam",
+      "tokyo": "Asia/Tokyo",
+      "beijing": "Asia/Shanghai",
+      "shanghai": "Asia/Shanghai",
+      "hong kong": "Asia/Hong_Kong",
+      "singapore": "Asia/Singapore",
+      "sydney": "Australia/Sydney",
+      "melbourne": "Australia/Melbourne",
+      "toronto": "America/Toronto",
+      "vancouver": "America/Vancouver",
+      "mumbai": "Asia/Kolkata",
+      "delhi": "Asia/Kolkata",
+      "bangalore": "Asia/Kolkata",
+      "dubai": "Asia/Dubai",
+      "tel aviv": "Asia/Jerusalem",
+      "jerusalem": "Asia/Jerusalem",
+      "são paulo": "America/Sao_Paulo",
+      "sao paulo": "America/Sao_Paulo",
+      "rio de janeiro": "America/Sao_Paulo",
+      "mexico city": "America/Mexico_City",
+      "buenos aires": "America/Argentina/Buenos_Aires",
+    };
+
+    // Check for exact matches first
+    if (timezoneMap[locationLower]) {
+      return timezoneMap[locationLower];
+    }
+
+    // Check for partial matches (e.g., "New York, NY" contains "new york")
+    for (const [key, timezone] of Object.entries(timezoneMap)) {
+      if (locationLower.includes(key)) {
+        return timezone;
+      }
+    }
+
+    return null;
+  };
+
+  const getLocalTime = (location?: string): string | null => {
+    const timezone = getTimezoneFromLocation(location);
+    if (!timezone) return null;
+
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return formatter.format(now);
+    } catch (error) {
+      return null;
+    }
+  };
+
   const comingUpContacts = contacts.filter((c) => c.status === "coming_up" || c.status === "overdue");
   const onTrackContacts = contacts.filter((c) => c.status === "on_track");
 
