@@ -329,6 +329,11 @@ export default function Home() {
                       {contact.relationship}
                       {contact.location && ` • ${contact.location}`}
                     </p>
+                    {contact.location && getLocalTime(contact.location) && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        🕐 {getLocalTime(contact.location)}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2 mb-4">
