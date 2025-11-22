@@ -25,7 +25,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -271,6 +282,25 @@ export default function Home() {
               IN TOUCH
             </h1>
             <div className="flex gap-2 sm:gap-3 items-center">
+              {/* Search icon button - desktop only */}
+              <button
+                onClick={() => {
+                  setIsSearchOpen(!isSearchOpen);
+                  if (!isSearchOpen) {
+                    // Focus the input when opening
+                    setTimeout(() => {
+                      const input = document.getElementById("search-input");
+                      input?.focus();
+                    }, 0);
+                  }
+                }}
+                className="hidden sm:flex p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                title="Search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
               <button
                 onClick={() => router.push("/add-contact")}
                 className="px-3 sm:px-4 py-2 text-sm bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
@@ -299,13 +329,48 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search contacts..."
-            className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500"
-          />
+          {/* Search input - always visible on mobile, expandable on desktop */}
+          {(isSearchOpen || searchQuery.trim() || isMobile) && (
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  id="search-input"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim()) {
+                      setIsSearchOpen(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Keep search open if there's text, close if empty (desktop only)
+                    if (!isMobile && !searchQuery.trim()) {
+                      setIsSearchOpen(false);
+                    }
+                  }}
+                  placeholder="Search contacts..."
+                  className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500"
+                />
+                {searchQuery.trim() && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      if (!isMobile) {
+                        setIsSearchOpen(false);
+                      }
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    title="Clear search"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Coming Up Section (includes overdue) */}
