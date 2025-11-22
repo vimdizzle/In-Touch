@@ -329,8 +329,8 @@ export default function Home() {
               </button>
             </div>
           </div>
-          {/* Search input - always visible on mobile, expandable on desktop */}
-          {(isSearchOpen || searchQuery.trim() || isMobile) && (
+          {/* Search input - expandable on both mobile and desktop */}
+          {(isSearchOpen || searchQuery.trim()) && (
             <div className="mb-4">
               <div className="relative">
                 <input
@@ -344,8 +344,8 @@ export default function Home() {
                     }
                   }}
                   onBlur={() => {
-                    // Keep search open if there's text, close if empty (desktop only)
-                    if (!isMobile && !searchQuery.trim()) {
+                    // Keep search open if there's text, close if empty
+                    if (!searchQuery.trim()) {
                       setIsSearchOpen(false);
                     }
                   }}
@@ -356,9 +356,7 @@ export default function Home() {
                   <button
                     onClick={() => {
                       setSearchQuery("");
-                      if (!isMobile) {
-                        setIsSearchOpen(false);
-                      }
+                      setIsSearchOpen(false);
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
                     title="Clear search"
