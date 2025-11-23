@@ -177,12 +177,67 @@ export default function Home() {
     if (!location) return null;
     
     const locationLower = location.toLowerCase().trim();
+    const locationOriginal = location.trim();
+    
+    // US state abbreviations mapping
+    const stateAbbreviations: { [key: string]: string } = {
+      "california": "CA",
+      "ca": "CA",
+      "new york": "NY",
+      "ny": "NY",
+      "texas": "TX",
+      "tx": "TX",
+      "florida": "FL",
+      "fl": "FL",
+      "illinois": "IL",
+      "il": "IL",
+      "pennsylvania": "PA",
+      "pa": "PA",
+      "ohio": "OH",
+      "oh": "OH",
+      "georgia": "GA",
+      "ga": "GA",
+      "north carolina": "NC",
+      "nc": "NC",
+      "michigan": "MI",
+      "mi": "MI",
+    };
     
     // Try to find the city in the location string
-    // Handle formats like "New York, NY", "NYC", "New York", etc.
+    // Handle formats like "New York, NY", "NYC", "New York", "San Jose California", etc.
     
     // First, try to find an exact or partial match using city-timezones
-    const cityMatches = cityTimezones.lookupViaCity(location);
+    let cityMatches = cityTimezones.lookupViaCity(locationOriginal);
+    
+    // If multiple matches, try to filter by state
+    if (cityMatches && cityMatches.length > 1) {
+      // Extract state from location (after comma or last word)
+      let stateHint: string | null = null;
+      if (locationOriginal.includes(',')) {
+        const parts = locationOriginal.split(',');
+        const statePart = parts[parts.length - 1].trim().toLowerCase();
+        stateHint = stateAbbreviations[statePart] || statePart.toUpperCase();
+      } else {
+        // Try to find state in location (e.g., "San Jose California")
+        const words = locationLower.split(/\s+/);
+        const lastWord = words[words.length - 1];
+        if (stateAbbreviations[lastWord]) {
+          stateHint = stateAbbreviations[lastWord];
+        } else if (lastWord.length === 2) {
+          stateHint = lastWord.toUpperCase();
+        }
+      }
+      
+      // If we have a state hint, try to find a match in that state
+      if (stateHint) {
+        const stateMatch = cityMatches.find(match => 
+          match.province && match.province.toUpperCase() === stateHint
+        );
+        if (stateMatch) {
+          return stateMatch.timezone;
+        }
+      }
+    }
     
     if (cityMatches && cityMatches.length > 0) {
       // Return the first match's timezone
@@ -191,11 +246,64 @@ export default function Home() {
     
     // If no direct match, try to extract city name from common formats
     // e.g., "New York, NY" -> "New York"
-    const cityName = locationLower.split(',')[0].trim();
-    if (cityName && cityName !== locationLower) {
-      const cityMatches2 = cityTimezones.lookupViaCity(cityName);
-      if (cityMatches2 && cityMatches2.length > 0) {
-        return cityMatches2[0].timezone;
+    // e.g., "San Jose California" -> "San Jose"
+    let cityName: string | null = null;
+    
+    if (locationOriginal.includes(',')) {
+      // Format: "City, State"
+      cityName = locationOriginal.split(',')[0].trim();
+    } else {
+      // Format: "City State" - try to extract city name
+      // For "San Jose California", extract "San Jose"
+      const words = locationOriginal.split(/\s+/);
+      if (words.length >= 2) {
+        // Check if last word looks like a state
+        const lastWord = words[words.length - 1].toLowerCase();
+        if (stateAbbreviations[lastWord] || lastWord.length === 2) {
+          // Last word is likely a state, so city is everything before it
+          cityName = words.slice(0, -1).join(' ');
+        } else {
+          // No clear state, try first two words as city name (for "San Jose", "New York", etc.)
+          cityName = words.slice(0, 2).join(' ');
+        }
+      } else {
+        cityName = locationOriginal;
+      }
+    }
+    
+    if (cityName && cityName !== locationOriginal) {
+      cityMatches = cityTimezones.lookupViaCity(cityName);
+      
+      // If multiple matches, try to filter by state
+      if (cityMatches && cityMatches.length > 1) {
+        // Extract state from original location
+        let stateHint: string | null = null;
+        if (locationOriginal.includes(',')) {
+          const parts = locationOriginal.split(',');
+          const statePart = parts[parts.length - 1].trim().toLowerCase();
+          stateHint = stateAbbreviations[statePart] || statePart.toUpperCase();
+        } else {
+          const words = locationLower.split(/\s+/);
+          const lastWord = words[words.length - 1];
+          if (stateAbbreviations[lastWord]) {
+            stateHint = stateAbbreviations[lastWord];
+          } else if (lastWord.length === 2) {
+            stateHint = lastWord.toUpperCase();
+          }
+        }
+        
+        if (stateHint) {
+          const stateMatch = cityMatches.find(match => 
+            match.province && match.province.toUpperCase() === stateHint
+          );
+          if (stateMatch) {
+            return stateMatch.timezone;
+          }
+        }
+      }
+      
+      if (cityMatches && cityMatches.length > 0) {
+        return cityMatches[0].timezone;
       }
     }
     
