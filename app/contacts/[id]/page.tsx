@@ -72,8 +72,11 @@ function ContactDetailContent() {
       }
 
       setUser(session.user);
-      await loadContact(session.user.id);
-      await loadTouchpoints();
+      // Load contact and touchpoints in parallel
+      await Promise.all([
+        loadContact(session.user.id),
+        loadTouchpoints()
+      ]);
       setLoading(false);
     });
   }, [contactId, router]);

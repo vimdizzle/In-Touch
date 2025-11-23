@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -67,82 +67,108 @@ export default function Home() {
 
   const loadContacts = async (userId: string) => {
     try {
-      // Fetch all contacts
-      const { data: contactsData, error: contactsError } = await supabase
-        .from("contacts")
-        .select("*")
-        .eq("user_id", userId)
-        .order("name", { ascending: true });
+      // Fetch all contacts and all touchpoints in parallel (2 queries instead of N+1)
+      const [contactsResult, touchpointsResult] = await Promise.all([
+        supabase
+          .from("contacts")
+          .select("*")
+          .eq("user_id", userId)
+          .order("name", { ascending: true }),
+        supabase
+          .from("touchpoints")
+          .select("contact_id, contact_date, channel")
+          .in("contact_id", []) // Will be populated after contacts are fetched
+          .order("contact_date", { ascending: false })
+      ]);
 
-      if (contactsError) throw contactsError;
-      if (!contactsData) return;
+      if (contactsResult.error) throw contactsResult.error;
+      const contactsData = contactsResult.data;
+      if (!contactsData || contactsData.length === 0) {
+        setContacts([]);
+        return;
+      }
 
-      // For each contact, get the last touchpoint
-      const contactsWithStatus = await Promise.all(
-        contactsData.map(async (contact) => {
-          const { data: lastTouchpoint } = await supabase
-            .from("touchpoints")
-            .select("contact_date, channel")
-            .eq("contact_id", contact.id)
-            .order("contact_date", { ascending: false })
-            .limit(1)
-            .single();
+      // Now fetch touchpoints for all contacts
+      const contactIds = contactsData.map(c => c.id);
+      const { data: allTouchpoints, error: touchpointsError } = await supabase
+        .from("touchpoints")
+        .select("contact_id, contact_date, channel")
+        .in("contact_id", contactIds)
+        .order("contact_date", { ascending: false });
 
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          let daysSinceLastContact: number | undefined;
-          let status: "overdue" | "coming_up" | "on_track" = "on_track";
-          let daysUntilDue: number | undefined;
-          let daysOverdue: number | undefined;
+      if (touchpointsError) throw touchpointsError;
 
-          if (lastTouchpoint) {
-            const lastDate = new Date(lastTouchpoint.contact_date);
-            lastDate.setHours(0, 0, 0, 0);
-            daysSinceLastContact = Math.floor(
-              (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            const daysUntilNextDue = contact.cadence_days - daysSinceLastContact;
-
-            if (daysUntilNextDue < 0) {
-              status = "overdue";
-              daysOverdue = Math.abs(daysUntilNextDue);
-            } else if (daysUntilNextDue <= 7) {
-              status = "coming_up";
-              daysUntilDue = daysUntilNextDue;
-            } else {
-              status = "on_track";
-              daysUntilDue = daysUntilNextDue;
-            }
-          } else {
-            // No touchpoints yet - consider overdue if cadence has passed since creation
-            const createdDate = new Date(contact.created_at);
-            createdDate.setHours(0, 0, 0, 0);
-            daysSinceLastContact = Math.floor(
-              (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            if (daysSinceLastContact >= contact.cadence_days) {
-              status = "overdue";
-              daysOverdue = daysSinceLastContact - contact.cadence_days;
-            } else if (contact.cadence_days - daysSinceLastContact <= 7) {
-              status = "coming_up";
-              daysUntilDue = contact.cadence_days - daysSinceLastContact;
-            }
+      // Group touchpoints by contact_id and get the latest one for each
+      const lastTouchpointMap = new Map<string, { contact_date: string; channel: string }>();
+      if (allTouchpoints) {
+        allTouchpoints.forEach(tp => {
+          if (!lastTouchpointMap.has(tp.contact_id)) {
+            lastTouchpointMap.set(tp.contact_id, {
+              contact_date: tp.contact_date,
+              channel: tp.channel
+            });
           }
+        });
+      }
 
-          return {
-            ...contact,
-            last_contact_date: lastTouchpoint?.contact_date,
-            last_contact_channel: lastTouchpoint?.channel,
-            days_since_last_contact: daysSinceLastContact,
-            status,
-            days_until_due: daysUntilDue,
-            days_overdue: daysOverdue,
-          };
-        })
-      );
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Process contacts with their last touchpoint
+      const contactsWithStatus = contactsData.map((contact) => {
+        const lastTouchpoint = lastTouchpointMap.get(contact.id);
+        
+        let daysSinceLastContact: number | undefined;
+        let status: "overdue" | "coming_up" | "on_track" = "on_track";
+        let daysUntilDue: number | undefined;
+        let daysOverdue: number | undefined;
+
+        if (lastTouchpoint) {
+          const lastDate = new Date(lastTouchpoint.contact_date);
+          lastDate.setHours(0, 0, 0, 0);
+          daysSinceLastContact = Math.floor(
+            (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
+
+          const daysUntilNextDue = contact.cadence_days - daysSinceLastContact;
+
+          if (daysUntilNextDue < 0) {
+            status = "overdue";
+            daysOverdue = Math.abs(daysUntilNextDue);
+          } else if (daysUntilNextDue <= 7) {
+            status = "coming_up";
+            daysUntilDue = daysUntilNextDue;
+          } else {
+            status = "on_track";
+            daysUntilDue = daysUntilNextDue;
+          }
+        } else {
+          // No touchpoints yet - consider overdue if cadence has passed since creation
+          const createdDate = new Date(contact.created_at);
+          createdDate.setHours(0, 0, 0, 0);
+          daysSinceLastContact = Math.floor(
+            (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
+
+          if (daysSinceLastContact >= contact.cadence_days) {
+            status = "overdue";
+            daysOverdue = daysSinceLastContact - contact.cadence_days;
+          } else if (contact.cadence_days - daysSinceLastContact <= 7) {
+            status = "coming_up";
+            daysUntilDue = contact.cadence_days - daysSinceLastContact;
+          }
+        }
+
+        return {
+          ...contact,
+          last_contact_date: lastTouchpoint?.contact_date,
+          last_contact_channel: lastTouchpoint?.channel,
+          days_since_last_contact: daysSinceLastContact,
+          status,
+          days_until_due: daysUntilDue,
+          days_overdue: daysOverdue,
+        };
+      });
 
       setContacts(contactsWithStatus);
     } catch (error) {
@@ -413,7 +439,18 @@ export default function Home() {
     return null;
   };
 
-  const getLocalTime = (city?: string | null, country?: string | null, location?: string | null): string | null => {
+  // Cache for local time calculations (persists across renders)
+  const localTimeCacheRef = useMemo(() => new Map<string, string | null>(), []);
+
+  const getLocalTime = useCallback((city?: string | null, country?: string | null, location?: string | null): string | null => {
+    // Create cache key
+    const cacheKey = `${city || ''}|${country || ''}|${location || ''}`;
+    
+    // Check cache first
+    if (localTimeCacheRef.has(cacheKey)) {
+      return localTimeCacheRef.get(cacheKey) || null;
+    }
+
     // Prefer city + country over location
     let timezone: string | null = null;
     if (city || country) {
@@ -424,7 +461,10 @@ export default function Home() {
       timezone = getTimezoneFromLocation(location);
     }
     
-    if (!timezone) return null;
+    if (!timezone) {
+      localTimeCacheRef.set(cacheKey, null);
+      return null;
+    }
 
     try {
       const now = new Date();
@@ -434,11 +474,14 @@ export default function Home() {
         minute: "2-digit",
         hour12: true,
       });
-      return formatter.format(now);
+      const result = formatter.format(now);
+      localTimeCacheRef.set(cacheKey, result);
+      return result;
     } catch (error) {
+      localTimeCacheRef.set(cacheKey, null);
       return null;
     }
-  };
+  }, [localTimeCacheRef]);
 
   // Filter contacts by search query
   const filterContacts = (contactList: Contact[]) => {
@@ -605,7 +648,10 @@ export default function Home() {
                       {contact.relationship}
                       {contact.city && ` • ${contact.city}`}
                       {!contact.city && contact.location && ` • ${contact.location.includes(',') ? contact.location.split(',')[0].trim() : contact.location.trim()}`}
-                      {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
+                      {(() => {
+                        const localTime = getLocalTime(contact.city, contact.country, contact.location);
+                        return localTime ? ` (${localTime})` : '';
+                      })()}
                       {` • ${formatCadence(contact.cadence_days)}`}
                     </p>
                   </div>
@@ -665,7 +711,10 @@ export default function Home() {
                       {contact.relationship}
                       {contact.city && ` • ${contact.city}`}
                       {!contact.city && contact.location && ` • ${contact.location.includes(',') ? contact.location.split(',')[0].trim() : contact.location.trim()}`}
-                      {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
+                      {(() => {
+                        const localTime = getLocalTime(contact.city, contact.country, contact.location);
+                        return localTime ? ` (${localTime})` : '';
+                      })()}
                       {` • ${formatCadence(contact.cadence_days)}`}
                     </p>
                   </div>
