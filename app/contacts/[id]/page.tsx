@@ -9,7 +9,9 @@ interface Contact {
   id: string;
   name: string;
   relationship: string;
-  location?: string | null;
+  city?: string | null;
+  country?: string | null;
+  location?: string | null; // kept for backward compatibility
   birthday?: string | null;
   cadence_days: number;
   notes?: string | null;
@@ -51,7 +53,8 @@ function ContactDetailContent() {
   const [notes, setNotes] = useState("");
   const [cadenceDays, setCadenceDays] = useState(30);
   const [editName, setEditName] = useState("");
-  const [editLocation, setEditLocation] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editCountry, setEditCountry] = useState("");
   const [editBirthday, setEditBirthday] = useState("");
   const [editCadenceDays, setEditCadenceDays] = useState(30);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -92,7 +95,8 @@ function ContactDetailContent() {
     setNotes(data.notes || "");
     setCadenceDays(data.cadence_days);
     setEditName(data.name);
-    setEditLocation(data.location || "");
+    setEditCity(data.city || "");
+    setEditCountry(data.country || "");
     setEditBirthday(data.birthday || "");
     setEditCadenceDays(data.cadence_days);
   };
@@ -168,7 +172,8 @@ function ContactDetailContent() {
         .from("contacts")
         .update({
           name: editName.trim(),
-          location: editLocation.trim() || null,
+          city: editCity.trim() || null,
+          country: editCountry.trim() || null,
           birthday: editBirthday || null,
           cadence_days: editCadenceDays,
         })
@@ -180,7 +185,8 @@ function ContactDetailContent() {
       setContact({
         ...contact,
         name: editName.trim(),
-        location: editLocation.trim() || null,
+        city: editCity.trim() || null,
+        country: editCountry.trim() || null,
         birthday: editBirthday || null,
         cadence_days: editCadenceDays,
       });
@@ -196,7 +202,8 @@ function ContactDetailContent() {
   const handleCancelEdit = () => {
     if (!contact) return;
     setEditName(contact.name);
-    setEditLocation(contact.location || "");
+    setEditCity(contact.city || "");
+    setEditCountry(contact.country || "");
     setEditBirthday(contact.birthday || "");
     setEditCadenceDays(contact.cadence_days);
     setEditing(false);
@@ -328,17 +335,31 @@ function ContactDetailContent() {
                       className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      value={editLocation}
-                      onChange={(e) => setEditLocation(e.target.value)}
-                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                      placeholder="New York, NY"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={editCity}
+                        onChange={(e) => setEditCity(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        placeholder="San Jose"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={editCountry}
+                        onChange={(e) => setEditCountry(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        placeholder="United States"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -396,7 +417,8 @@ function ContactDetailContent() {
                   <h2 className="text-3xl sm:text-4xl font-bold mb-2">{contact.name}</h2>
                   <p className="text-gray-400 text-sm sm:text-base">
                     {contact.relationship}
-                    {contact.location && ` • ${contact.location}`}
+                    {(contact.city || contact.country) && ` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
+                    {!contact.city && !contact.country && contact.location && ` • ${contact.location}`}
                     {contact.birthday && ` • Birthday: ${formatDate(contact.birthday)}`}
                   </p>
                 </>

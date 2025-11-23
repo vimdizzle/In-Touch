@@ -10,7 +10,9 @@ interface Contact {
   id: string;
   name: string;
   relationship: string;
-  location?: string;
+  city?: string | null;
+  country?: string | null;
+  location?: string | null; // kept for backward compatibility
   cadence_days: number;
   last_contact_date?: string;
   last_contact_channel?: string;
@@ -173,7 +175,40 @@ export default function Home() {
   };
 
   // Map locations to timezones using city-timezones library
-  const getTimezoneFromLocation = (location?: string): string | null => {
+  const getTimezoneFromCityCountry = (city?: string | null, country?: string | null): string | null => {
+    if (!city && !country) return null;
+    
+    // If we have both city and country, use them for precise lookup
+    if (city && country) {
+      const cityMatches = cityTimezones.lookupViaCity(city);
+      if (cityMatches && cityMatches.length > 0) {
+        // Filter by country if multiple matches
+        if (cityMatches.length > 1) {
+          const countryMatch = cityMatches.find(match => {
+            const matchStr = JSON.stringify(match).toLowerCase();
+            return matchStr.includes(country.toLowerCase());
+          });
+          if (countryMatch) {
+            return countryMatch.timezone;
+          }
+        }
+        return cityMatches[0].timezone;
+      }
+    }
+    
+    // Fallback to city only
+    if (city) {
+      const cityMatches = cityTimezones.lookupViaCity(city);
+      if (cityMatches && cityMatches.length > 0) {
+        return cityMatches[0].timezone;
+      }
+    }
+    
+    return null;
+  };
+
+  // Legacy function for backward compatibility with location field
+  const getTimezoneFromLocation = (location?: string | null): string | null => {
     if (!location) return null;
     
     const locationLower = location.toLowerCase().trim();
@@ -366,8 +401,17 @@ export default function Home() {
     return null;
   };
 
-  const getLocalTime = (location?: string): string | null => {
-    const timezone = getTimezoneFromLocation(location);
+  const getLocalTime = (city?: string | null, country?: string | null, location?: string | null): string | null => {
+    // Prefer city + country over location
+    let timezone: string | null = null;
+    if (city || country) {
+      timezone = getTimezoneFromCityCountry(city, country);
+    }
+    // Fallback to location for backward compatibility
+    if (!timezone && location) {
+      timezone = getTimezoneFromLocation(location);
+    }
+    
     if (!timezone) return null;
 
     try {
@@ -387,13 +431,15 @@ export default function Home() {
   // Filter contacts by search query
   const filterContacts = (contactList: Contact[]) => {
     if (!searchQuery.trim()) return contactList;
-    
+
     const query = searchQuery.toLowerCase().trim();
     return contactList.filter((contact) => {
       const nameMatch = contact.name.toLowerCase().includes(query);
       const relationshipMatch = contact.relationship.toLowerCase().includes(query);
-      const locationMatch = contact.location?.toLowerCase().includes(query);
-      return nameMatch || relationshipMatch || locationMatch;
+      const cityMatch = contact.city?.toLowerCase().includes(query);
+      const countryMatch = contact.country?.toLowerCase().includes(query);
+      const locationMatch = contact.location?.toLowerCase().includes(query); // backward compatibility
+      return nameMatch || relationshipMatch || cityMatch || countryMatch || locationMatch;
     });
   };
 
@@ -545,10 +591,16 @@ export default function Home() {
                     </h4>
                     <p className="text-sm text-gray-400">
                       {contact.relationship}
-                      {contact.location && (
+                      {(contact.city || contact.country) && (
+                        <>
+                          {` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
+                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
+                        </>
+                      )}
+                      {!contact.city && !contact.country && contact.location && (
                         <>
                           {` • ${contact.location}`}
-                          {getLocalTime(contact.location) && ` (${getLocalTime(contact.location)})`}
+                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
                         </>
                       )}
                     </p>
@@ -622,10 +674,16 @@ export default function Home() {
                     </h4>
                     <p className="text-sm text-gray-400">
                       {contact.relationship}
-                      {contact.location && (
+                      {(contact.city || contact.country) && (
+                        <>
+                          {` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
+                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
+                        </>
+                      )}
+                      {!contact.city && !contact.country && contact.location && (
                         <>
                           {` • ${contact.location}`}
-                          {getLocalTime(contact.location) && ` (${getLocalTime(contact.location)})`}
+                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
                         </>
                       )}
                     </p>

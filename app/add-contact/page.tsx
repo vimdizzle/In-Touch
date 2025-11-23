@@ -10,7 +10,9 @@ interface Contact {
   name: string;
   relationship: string;
   cadence_days: number;
-  location?: string;
+  city?: string;
+  country?: string;
+  location?: string; // kept for backward compatibility
   birthday?: string;
   notes?: string;
 }
@@ -45,7 +47,8 @@ export default function AddContactPage() {
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("Friend");
   const [cadenceDays, setCadenceDays] = useState(30);
-  const [location, setLocation] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
   const [birthday, setBirthday] = useState("");
   const [notes, setNotes] = useState("");
   const [lastTouchpointDate, setLastTouchpointDate] = useState("");
@@ -87,7 +90,8 @@ export default function AddContactPage() {
             name: name.trim(),
             relationship: relationship,
             cadence_days: cadenceDays,
-            location: location.trim() || null,
+            city: city.trim() || null,
+            country: country.trim() || null,
             birthday: birthday || null,
             notes: notes.trim() || null,
           },
@@ -120,7 +124,8 @@ export default function AddContactPage() {
       
       // Reset form
       setName("");
-      setLocation("");
+      setCity("");
+      setCountry("");
       setBirthday("");
       setNotes("");
       setLastTouchpointDate("");
@@ -249,17 +254,31 @@ export default function AddContactPage() {
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Location (optional)
-                </label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  placeholder="New York, NY"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    City (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="San Jose"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Country (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="United States"
+                  />
+                </div>
               </div>
 
               <div>
