@@ -165,13 +165,25 @@ export default function Home() {
 
   const formatLastContact = (contact: Contact) => {
     if (!contact.last_contact_date) {
-      return "Last touch: Never contacted";
+      return "Never contacted";
     }
     const days = contact.days_since_last_contact || 0;
-    const channel = contact.last_contact_channel || "unknown";
-    if (days === 0) return "Last touch: Today";
-    if (days === 1) return "Last touch: Yesterday";
-    return `Last touch: ${days} days ago (${channel})`;
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    return `${days} days ago`;
+  };
+
+  const getNextTouchInfo = (contact: Contact) => {
+    if (contact.status === "overdue") {
+      return { text: "0 days", color: "text-red-400" };
+    }
+    if (contact.status === "coming_up" && contact.days_until_due !== undefined) {
+      return { text: `${contact.days_until_due} days`, color: "text-yellow-400" };
+    }
+    if (contact.status === "on_track" && contact.days_until_due !== undefined) {
+      return { text: `${contact.days_until_due} days`, color: "text-green-400" };
+    }
+    return { text: "—", color: "text-gray-400" };
   };
 
   // Map locations to timezones using city-timezones library
@@ -583,58 +595,35 @@ export default function Home() {
               {comingUpContacts.map((contact) => (
                 <div
                   key={contact.id}
-                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 opacity-90 hover:opacity-100 hover:border-cyan-500/50 transition-all"
+                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 opacity-90 hover:opacity-100 hover:border-cyan-500/50 transition-all"
                 >
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <h4 className="text-lg font-semibold text-white mb-1">
                       {contact.name}
                     </h4>
                     <p className="text-sm text-gray-400">
                       {contact.relationship}
-                      {(contact.city || contact.country) && (
-                        <>
-                          {` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
-                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
-                        </>
-                      )}
-                      {!contact.city && !contact.country && contact.location && (
-                        <>
-                          {` • ${contact.location}`}
-                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
-                        </>
-                      )}
+                      {contact.city && ` • ${contact.city}`}
+                      {!contact.city && contact.location && ` • ${contact.location.includes(',') ? contact.location.split(',')[0].trim() : contact.location.trim()}`}
+                      {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
+                      {` • ${formatCadence(contact.cadence_days)}`}
                     </p>
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-300">
-                      {formatLastContact(contact)}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400">
+                      Last touch: <span className="text-gray-300">{formatLastContact(contact)}</span>
+                      {" • "}
+                      Next touch: <span className={getNextTouchInfo(contact).color}>{getNextTouchInfo(contact).text}</span>
                     </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
-                        {formatCadence(contact.cadence_days)}
-                      </span>
-                      {contact.status === "overdue" && contact.days_overdue !== undefined ? (
-                        <span className="text-xs text-red-400">
-                          Overdue by {contact.days_overdue} day
-                          {contact.days_overdue !== 1 ? "s" : ""}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-yellow-400">
-                          Due in {contact.days_until_due} day
-                          {contact.days_until_due !== 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 sm:px-4 rounded-md text-sm font-medium transition-colors"
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors"
                     >
-                      <span className="hidden sm:inline">Log touchpoint</span>
-                      <span className="sm:hidden">Log</span>
+                      Log
                     </button>
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
@@ -666,52 +655,35 @@ export default function Home() {
               {onTrackContacts.map((contact) => (
                 <div
                   key={contact.id}
-                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 opacity-75 hover:opacity-100 hover:border-gray-700 transition-all"
+                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 opacity-75 hover:opacity-100 hover:border-gray-700 transition-all"
                 >
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <h4 className="text-lg font-semibold text-white mb-1">
                       {contact.name}
                     </h4>
                     <p className="text-sm text-gray-400">
                       {contact.relationship}
-                      {(contact.city || contact.country) && (
-                        <>
-                          {` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
-                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
-                        </>
-                      )}
-                      {!contact.city && !contact.country && contact.location && (
-                        <>
-                          {` • ${contact.location}`}
-                          {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
-                        </>
-                      )}
+                      {contact.city && ` • ${contact.city}`}
+                      {!contact.city && contact.location && ` • ${contact.location.includes(',') ? contact.location.split(',')[0].trim() : contact.location.trim()}`}
+                      {getLocalTime(contact.city, contact.country, contact.location) && ` (${getLocalTime(contact.city, contact.country, contact.location)})`}
+                      {` • ${formatCadence(contact.cadence_days)}`}
                     </p>
                   </div>
 
-                  <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-300">
-                      {formatLastContact(contact)}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400">
+                      Last touch: <span className="text-gray-300">{formatLastContact(contact)}</span>
+                      {" • "}
+                      Next touch: <span className={getNextTouchInfo(contact).color}>{getNextTouchInfo(contact).text}</span>
                     </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded">
-                        {formatCadence(contact.cadence_days)}
-                      </span>
-                      {contact.days_until_due !== undefined && (
-                        <span className="text-xs text-green-400">
-                          Due in {contact.days_until_due} days
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 sm:px-4 rounded-md text-sm font-medium transition-colors"
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors"
                     >
-                      <span className="hidden sm:inline">Log touchpoint</span>
-                      <span className="sm:hidden">Log</span>
+                      Log
                     </button>
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
