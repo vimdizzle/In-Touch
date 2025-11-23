@@ -155,6 +155,12 @@ function ContactDetailContent() {
 
   const handleSaveEdit = async () => {
     if (!contact || !user) return;
+    
+    // Validate cadence days
+    if (editCadenceDays < 1) {
+      alert("Cadence must be at least 1 day");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -353,7 +359,17 @@ function ContactDetailContent() {
                     <input
                       type="number"
                       value={editCadenceDays}
-                      onChange={(e) => setEditCadenceDays(parseInt(e.target.value) || 30)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setEditCadenceDays(0);
+                        } else {
+                          const num = parseInt(value);
+                          if (!isNaN(num) && num > 0) {
+                            setEditCadenceDays(num);
+                          }
+                        }
+                      }}
                       min="1"
                       className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
