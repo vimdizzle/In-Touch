@@ -13,6 +13,7 @@ interface Contact {
   city?: string | null;
   country?: string | null;
   location?: string | null; // kept for backward compatibility
+  birthday?: string | null;
   cadence_days: number;
   last_contact_date?: string;
   last_contact_channel?: string;
@@ -858,7 +859,8 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
         )}
