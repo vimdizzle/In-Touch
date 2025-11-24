@@ -51,7 +51,17 @@ export default function AuthPage() {
 
       router.push("/");
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      // Provide more helpful error messages
+      if (err.message?.includes("Failed to fetch") || err.message?.includes("NetworkError")) {
+        setError("Unable to connect to the server. Please check your internet connection and try again.");
+      } else if (err.message?.includes("Invalid login credentials")) {
+        setError("Invalid email or password. Please try again.");
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+      console.error("Auth error:", err);
     } finally {
       setLoading(false);
     }
