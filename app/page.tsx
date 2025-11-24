@@ -243,6 +243,52 @@ export default function Home() {
     return { text: "—", color: "text-gray-400" };
   };
 
+  const getBirthdayInfo = (birthday: string | null | undefined) => {
+    if (!birthday) return null;
+    
+    try {
+      const birthdayDate = new Date(birthday);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const currentYear = today.getFullYear();
+      const birthdayMonth = birthdayDate.getMonth();
+      const birthdayDay = birthdayDate.getDate();
+      
+      // Create birthday date for this year
+      let nextBirthday = new Date(currentYear, birthdayMonth, birthdayDay);
+      
+      // If birthday has already passed this year, use next year
+      if (nextBirthday < today) {
+        nextBirthday = new Date(currentYear + 1, birthdayMonth, birthdayDay);
+      }
+      
+      // Calculate days until birthday
+      const daysUntilBirthday = Math.floor(
+        (nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      
+      if (daysUntilBirthday >= 0 && daysUntilBirthday <= 7) {
+        // Format the birthday date
+        const formattedDate = nextBirthday.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        });
+        
+        return {
+          daysUntil: daysUntilBirthday,
+          formattedDate,
+          isToday: daysUntilBirthday === 0
+        };
+      }
+    } catch (error) {
+      console.error("Error parsing birthday:", birthday, error);
+    }
+    
+    return null;
+  };
+
   // Map locations to timezones using city-timezones library
   const getTimezoneFromCityCountry = (city?: string | null, country?: string | null): string | null => {
     if (!city && !country) return null;
@@ -666,11 +712,30 @@ export default function Home() {
             </div>
             {comingUpContacts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {comingUpContacts.map((contact) => (
+              {comingUpContacts.map((contact) => {
+                const birthdayInfo = getBirthdayInfo(contact.birthday);
+                const hasUpcomingBirthday = birthdayInfo !== null;
+                
+                return (
                 <div
                   key={contact.id}
-                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 opacity-90 hover:opacity-100 hover:border-cyan-500/50 transition-all"
+                  className={`bg-[#0b1120] rounded-lg p-4 opacity-90 hover:opacity-100 transition-all relative ${
+                    hasUpcomingBirthday 
+                      ? "border-2 border-yellow-500/60 hover:border-yellow-500/80" 
+                      : "border border-gray-800 hover:border-cyan-500/50"
+                  }`}
                 >
+                  {hasUpcomingBirthday && (
+                    <div 
+                      className="absolute top-2 right-2 text-2xl cursor-help"
+                      title={birthdayInfo.isToday 
+                        ? `Birthday today! (${birthdayInfo.formattedDate})` 
+                        : `Birthday in ${birthdayInfo.daysUntil} day${birthdayInfo.daysUntil !== 1 ? 's' : ''} (${birthdayInfo.formattedDate})`
+                      }
+                    >
+                      🎂
+                    </div>
+                  )}
                   <div className="mb-3">
                     <h4 className="text-lg font-semibold text-white mb-1">
                       {contact.name}
@@ -710,7 +775,8 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           ) : (
             <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-8 text-center">
@@ -729,11 +795,30 @@ export default function Home() {
               Already in touch:
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {onTrackContacts.map((contact) => (
+              {onTrackContacts.map((contact) => {
+                const birthdayInfo = getBirthdayInfo(contact.birthday);
+                const hasUpcomingBirthday = birthdayInfo !== null;
+                
+                return (
                 <div
                   key={contact.id}
-                  className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 opacity-75 hover:opacity-100 hover:border-gray-700 transition-all"
+                  className={`bg-[#0b1120] rounded-lg p-4 opacity-75 hover:opacity-100 transition-all relative ${
+                    hasUpcomingBirthday 
+                      ? "border-2 border-yellow-500/60 hover:border-yellow-500/80" 
+                      : "border border-gray-800 hover:border-gray-700"
+                  }`}
                 >
+                  {hasUpcomingBirthday && (
+                    <div 
+                      className="absolute top-2 right-2 text-2xl cursor-help"
+                      title={birthdayInfo.isToday 
+                        ? `Birthday today! (${birthdayInfo.formattedDate})` 
+                        : `Birthday in ${birthdayInfo.daysUntil} day${birthdayInfo.daysUntil !== 1 ? 's' : ''} (${birthdayInfo.formattedDate})`
+                      }
+                    >
+                      🎂
+                    </div>
+                  )}
                   <div className="mb-3">
                     <h4 className="text-lg font-semibold text-white mb-1">
                       {contact.name}
