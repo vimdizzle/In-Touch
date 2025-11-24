@@ -100,9 +100,12 @@ export default function AddContactPage() {
         .single();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("Contact was created but data was not returned");
+      }
 
       // If last touchpoint date is provided, create a touchpoint
-      if (lastTouchpointDate) {
+      if (lastTouchpointDate && data.id) {
         const { error: touchpointError } = await supabase
           .from("touchpoints")
           .insert([
