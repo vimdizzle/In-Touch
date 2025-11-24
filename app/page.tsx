@@ -106,6 +106,40 @@ export default function Home() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      // Helper function to check if birthday is within next 7 days
+      const isBirthdayWithin7Days = (birthday: string | null | undefined): boolean => {
+        if (!birthday) return false;
+        
+        try {
+          const birthdayDate = new Date(birthday);
+          const currentYear = today.getFullYear();
+          const currentMonth = today.getMonth();
+          const currentDay = today.getDate();
+          
+          // Get birthday month and day (ignore year)
+          const birthdayMonth = birthdayDate.getMonth();
+          const birthdayDay = birthdayDate.getDate();
+          
+          // Create birthday date for this year
+          let nextBirthday = new Date(currentYear, birthdayMonth, birthdayDay);
+          
+          // If birthday has already passed this year, use next year
+          if (nextBirthday < today) {
+            nextBirthday = new Date(currentYear + 1, birthdayMonth, birthdayDay);
+          }
+          
+          // Calculate days until birthday
+          const daysUntilBirthday = Math.floor(
+            (nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          
+          return daysUntilBirthday >= 0 && daysUntilBirthday <= 7;
+        } catch (error) {
+          console.error("Error parsing birthday:", birthday, error);
+          return false;
+        }
+      };
+
       // Process contacts with their last touchpoint
       const contactsWithStatus = contactsData.map((contact) => {
         const lastTouchpoint = lastTouchpointMap.get(contact.id);
@@ -149,6 +183,11 @@ export default function Home() {
             status = "coming_up";
             daysUntilDue = contact.cadence_days - daysSinceLastContact;
           }
+        }
+
+        // Override status to "coming_up" if birthday is within 7 days (regardless of cadence)
+        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track") {
+          status = "coming_up";
         }
 
         return {
