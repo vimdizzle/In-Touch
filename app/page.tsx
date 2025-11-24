@@ -67,28 +67,20 @@ export default function Home() {
 
   const loadContacts = async (userId: string) => {
     try {
-      // Fetch all contacts and all touchpoints in parallel (2 queries instead of N+1)
-      const [contactsResult, touchpointsResult] = await Promise.all([
-        supabase
-          .from("contacts")
-          .select("*")
-          .eq("user_id", userId)
-          .order("name", { ascending: true }),
-        supabase
-          .from("touchpoints")
-          .select("contact_id, contact_date, channel")
-          .in("contact_id", []) // Will be populated after contacts are fetched
-          .order("contact_date", { ascending: false })
-      ]);
+      // Fetch all contacts first
+      const { data: contactsData, error: contactsError } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("user_id", userId)
+        .order("name", { ascending: true });
 
-      if (contactsResult.error) throw contactsResult.error;
-      const contactsData = contactsResult.data;
+      if (contactsError) throw contactsError;
       if (!contactsData || contactsData.length === 0) {
         setContacts([]);
         return;
       }
 
-      // Now fetch touchpoints for all contacts
+      // Then fetch all touchpoints for these contacts in one query
       const contactIds = contactsData.map(c => c.id);
       const { data: allTouchpoints, error: touchpointsError } = await supabase
         .from("touchpoints")
