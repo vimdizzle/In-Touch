@@ -234,10 +234,19 @@ function ContactDetailContent() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string, includeYear: boolean = true) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
-      year: "numeric",
+      ...(includeYear && { year: "numeric" }),
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatBirthday = (dateString: string) => {
+    // Format birthday without year for privacy
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
     });
@@ -422,7 +431,7 @@ function ContactDetailContent() {
                     {contact.relationship}
                     {(contact.city || contact.country) && ` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
                     {!contact.city && !contact.country && contact.location && ` • ${contact.location}`}
-                    {contact.birthday && ` • Birthday: ${formatDate(contact.birthday)}`}
+                    {contact.birthday && ` • Birthday: ${formatBirthday(contact.birthday)}`}
                   </p>
                 </>
               )}

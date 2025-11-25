@@ -270,11 +270,10 @@ export default function Home() {
       );
       
       if (daysUntilBirthday >= 0 && daysUntilBirthday <= 7) {
-        // Format the birthday date
+        // Format the birthday date (month and day only, no year for privacy)
         const formattedDate = nextBirthday.toLocaleDateString("en-US", {
           month: "long",
-          day: "numeric",
-          year: "numeric"
+          day: "numeric"
         });
         
         return {
