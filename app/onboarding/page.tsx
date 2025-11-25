@@ -34,6 +34,35 @@ const CADENCE_PRESETS = [
   { label: "Yearly", days: 365 },
 ];
 
+// Helper functions for birthday (month/day only, no year)
+const formatBirthdayForDB = (month: string, day: string): string | null => {
+  if (!month || !day) return null;
+  // Use year 2000 as placeholder (leap year, so Feb 29 works)
+  return `2000-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+};
+
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+const getDaysInMonth = (month: string): number[] => {
+  if (!month) return [];
+  const monthNum = parseInt(month);
+  const daysInMonth = new Date(2000, monthNum, 0).getDate(); // Using 2000 (leap year) for Feb 29
+  return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+};
+
 export default function OnboardingPage() {
   const [user, setUser] = useState<User | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -47,7 +76,8 @@ export default function OnboardingPage() {
   const [cadenceDays, setCadenceDays] = useState(30);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
-  const [birthday, setBirthday] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
+  const [birthdayDay, setBirthdayDay] = useState("");
   const [notes, setNotes] = useState("");
   const [lastTouchpointDate, setLastTouchpointDate] = useState("");
 
@@ -80,6 +110,8 @@ export default function OnboardingPage() {
 
     setSaving(true);
     try {
+      const birthdayForDB = formatBirthdayForDB(birthdayMonth, birthdayDay);
+      
       const { data, error } = await supabase
         .from("contacts")
         .insert([
@@ -90,7 +122,7 @@ export default function OnboardingPage() {
             cadence_days: cadenceDays,
             city: city.trim() || null,
             country: country.trim() || null,
-            birthday: birthday || null,
+            birthday: birthdayForDB,
             notes: notes.trim() || null,
           },
         ])
@@ -124,7 +156,8 @@ export default function OnboardingPage() {
       setName("");
       setCity("");
       setCountry("");
-      setBirthday("");
+      setBirthdayMonth("");
+      setBirthdayDay("");
       setNotes("");
       setLastTouchpointDate("");
       setRelationship("Friend");
@@ -261,13 +294,48 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Birthday (optional)
                 </label>
-                <input
-                  type="date"
-                  value={birthday}
-                  onChange={(e) => setBirthday(e.target.value)}
-                  className="w-full max-w-full px-4 py-3 sm:py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border min-h-[44px] sm:min-h-0"
-                  style={{ WebkitAppearance: 'none', appearance: 'none' }}
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <select
+                      value={birthdayMonth}
+                      onChange={(e) => {
+                        setBirthdayMonth(e.target.value);
+                        // Reset day if month changes and current day is invalid
+                        if (e.target.value) {
+                          const daysInMonth = getDaysInMonth(e.target.value);
+                          if (birthdayDay && parseInt(birthdayDay) > daysInMonth.length) {
+                            setBirthdayDay("");
+                          }
+                        } else {
+                          setBirthdayDay("");
+                        }
+                      }}
+                      className="w-full px-4 py-3 sm:py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base min-h-[44px] sm:min-h-0"
+                    >
+                      <option value="">Month</option>
+                      {MONTHS.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <select
+                      value={birthdayDay}
+                      onChange={(e) => setBirthdayDay(e.target.value)}
+                      disabled={!birthdayMonth}
+                      className="w-full px-4 py-3 sm:py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base min-h-[44px] sm:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Day</option>
+                      {birthdayMonth && getDaysInMonth(birthdayMonth).map((day) => (
+                        <option key={day} value={String(day).padStart(2, '0')}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div>

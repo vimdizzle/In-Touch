@@ -42,6 +42,48 @@ const CHANNEL_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+// Helper functions for birthday (month/day only, no year)
+const parseBirthday = (birthday: string | null | undefined): { month: string; day: string } => {
+  if (!birthday) return { month: "", day: "" };
+  try {
+    const date = new Date(birthday);
+    return {
+      month: String(date.getMonth() + 1).padStart(2, '0'),
+      day: String(date.getDate()).padStart(2, '0')
+    };
+  } catch {
+    return { month: "", day: "" };
+  }
+};
+
+const formatBirthdayForDB = (month: string, day: string): string | null => {
+  if (!month || !day) return null;
+  // Use year 2000 as placeholder (leap year, so Feb 29 works)
+  return `2000-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+};
+
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+const getDaysInMonth = (month: string): number[] => {
+  if (!month) return [];
+  const monthNum = parseInt(month);
+  const daysInMonth = new Date(2000, monthNum, 0).getDate(); // Using 2000 (leap year) for Feb 29
+  return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+};
+
 function ContactDetailContent() {
   const [user, setUser] = useState<User | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
@@ -55,7 +97,8 @@ function ContactDetailContent() {
   const [editName, setEditName] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editCountry, setEditCountry] = useState("");
-  const [editBirthday, setEditBirthday] = useState("");
+  const [editBirthdayMonth, setEditBirthdayMonth] = useState("");
+  const [editBirthdayDay, setEditBirthdayDay] = useState("");
   const [editCadenceDays, setEditCadenceDays] = useState(30);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -100,7 +143,9 @@ function ContactDetailContent() {
     setEditName(data.name);
     setEditCity(data.city || "");
     setEditCountry(data.country || "");
-    setEditBirthday(data.birthday || "");
+    const { month, day } = parseBirthday(data.birthday);
+    setEditBirthdayMonth(month);
+    setEditBirthdayDay(day);
     setEditCadenceDays(data.cadence_days);
   };
 
@@ -171,13 +216,15 @@ function ContactDetailContent() {
 
     setSaving(true);
     try {
+      const birthdayForDB = formatBirthdayForDB(editBirthdayMonth, editBirthdayDay);
+      
       const { error } = await supabase
         .from("contacts")
         .update({
           name: editName.trim(),
           city: editCity.trim() || null,
           country: editCountry.trim() || null,
-          birthday: editBirthday || null,
+          birthday: birthdayForDB,
           cadence_days: editCadenceDays,
         })
         .eq("id", contactId)
@@ -190,7 +237,7 @@ function ContactDetailContent() {
         name: editName.trim(),
         city: editCity.trim() || null,
         country: editCountry.trim() || null,
-        birthday: editBirthday || null,
+        birthday: birthdayForDB,
         cadence_days: editCadenceDays,
       });
       setCadenceDays(editCadenceDays);
@@ -207,7 +254,9 @@ function ContactDetailContent() {
     setEditName(contact.name);
     setEditCity(contact.city || "");
     setEditCountry(contact.country || "");
-    setEditBirthday(contact.birthday || "");
+    const { month, day } = parseBirthday(contact.birthday);
+    setEditBirthdayMonth(month);
+    setEditBirthdayDay(day);
     setEditCadenceDays(contact.cadence_days);
     setEditing(false);
   };
@@ -375,15 +424,50 @@ function ContactDetailContent() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Birthday
+                      Birthday (optional)
                     </label>
-                    <input
-                      type="date"
-                      value={editBirthday}
-                      onChange={(e) => setEditBirthday(e.target.value)}
-                      className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
-                      style={{ WebkitAppearance: 'none', appearance: 'none' }}
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <select
+                          value={editBirthdayMonth}
+                          onChange={(e) => {
+                            setEditBirthdayMonth(e.target.value);
+                            // Reset day if month changes and current day is invalid
+                            if (e.target.value) {
+                              const daysInMonth = getDaysInMonth(e.target.value);
+                              if (editBirthdayDay && parseInt(editBirthdayDay) > daysInMonth.length) {
+                                setEditBirthdayDay("");
+                              }
+                            } else {
+                              setEditBirthdayDay("");
+                            }
+                          }}
+                          className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base"
+                        >
+                          <option value="">Month</option>
+                          {MONTHS.map((month) => (
+                            <option key={month.value} value={month.value}>
+                              {month.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <select
+                          value={editBirthdayDay}
+                          onChange={(e) => setEditBirthdayDay(e.target.value)}
+                          disabled={!editBirthdayMonth}
+                          className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="">Day</option>
+                          {editBirthdayMonth && getDaysInMonth(editBirthdayMonth).map((day) => (
+                            <option key={day} value={String(day).padStart(2, '0')}>
+                              {day}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
