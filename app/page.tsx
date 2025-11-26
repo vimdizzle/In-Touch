@@ -925,7 +925,7 @@ export default function Home() {
                     )}
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="flex-1 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                      className="flex-1 py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       View
                     </button>
@@ -1050,7 +1050,7 @@ export default function Home() {
                             e.stopPropagation();
                             setOpenContactMenu(openContactMenu === contact.id ? null : contact.id);
                           }}
-                          className="w-full px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                          className="w-full py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                         >
                           Contact
                         </button>
@@ -1088,7 +1088,7 @@ export default function Home() {
                     )}
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="flex-1 px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                      className="flex-1 py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       View
                     </button>
