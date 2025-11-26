@@ -359,6 +359,29 @@ function ContactDetailContent() {
     }
   };
 
+  const handleTogglePin = async () => {
+    if (!contact || !user) return;
+
+    const newPinStatus = !isPinned;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("contacts")
+        .update({ is_pinned: newPinStatus })
+        .eq("id", contactId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      setIsPinned(newPinStatus);
+      setContact({ ...contact, is_pinned: newPinStatus });
+    } catch (err: any) {
+      alert(`Error ${newPinStatus ? 'pinning' : 'unpinning'} contact: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatDate = (dateString: string, includeYear: boolean = true) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
