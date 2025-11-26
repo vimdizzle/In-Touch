@@ -803,32 +803,23 @@ export default function Home() {
                       : "border border-gray-800 hover:border-cyan-500/50"
                   }`}
                 >
-                  {isPinned && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTogglePin(contact.id);
-                      }}
-                      className="absolute top-2 right-2 text-cyan-400 z-20 bg-[#0b1120] rounded-full p-1 hover:bg-[#111827] hover:text-cyan-300 transition-colors cursor-pointer"
-                      title="Click to unpin"
-                    >
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                      </svg>
-                    </button>
-                  )}
-                  {hasUpcomingBirthday && !isPinned && (
-                    <div 
-                      className="absolute top-2 right-2 text-2xl cursor-help"
-                      title={birthdayInfo.isToday 
-                        ? `Birthday today! (${birthdayInfo.formattedDate})` 
-                        : `Birthday in ${birthdayInfo.daysUntil} day${birthdayInfo.daysUntil !== 1 ? 's' : ''} (${birthdayInfo.formattedDate})`
-                      }
-                    >
-                      🎂
-                    </div>
-                  )}
-                  {hasUpcomingBirthday && isPinned && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTogglePin(contact.id);
+                    }}
+                    className={`absolute top-2 right-2 z-20 bg-[#0b1120] rounded-full p-1 hover:bg-[#111827] transition-colors cursor-pointer ${
+                      isPinned 
+                        ? "text-cyan-400 hover:text-cyan-300" 
+                        : "text-gray-500 hover:text-gray-400"
+                    }`}
+                    title={isPinned ? "Click to unpin" : "Click to pin"}
+                  >
+                    <svg className="w-6 h-6" fill={isPinned ? "currentColor" : "none"} stroke={isPinned ? "none" : "currentColor"} strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                  </button>
+                  {hasUpcomingBirthday && (
                     <div 
                       className="absolute top-2 right-9 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
@@ -918,6 +909,7 @@ export default function Home() {
               {onTrackContacts.map((contact) => {
                 const birthdayInfo = getBirthdayInfo(contact.birthday);
                 const hasUpcomingBirthday = birthdayInfo !== null;
+                const isPinned = contact.is_pinned === true;
                 
                 return (
                 <div
@@ -928,9 +920,25 @@ export default function Home() {
                       : "border border-gray-800 hover:border-gray-700"
                   }`}
                 >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTogglePin(contact.id);
+                    }}
+                    className={`absolute top-2 right-2 z-20 bg-[#0b1120] rounded-full p-1 hover:bg-[#111827] transition-colors cursor-pointer ${
+                      isPinned 
+                        ? "text-cyan-400 hover:text-cyan-300" 
+                        : "text-gray-500 hover:text-gray-400"
+                    }`}
+                    title={isPinned ? "Click to unpin" : "Click to pin"}
+                  >
+                    <svg className="w-6 h-6" fill={isPinned ? "currentColor" : "none"} stroke={isPinned ? "none" : "currentColor"} strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                  </button>
                   {hasUpcomingBirthday && (
                     <div 
-                      className="absolute top-2 right-2 text-2xl cursor-help"
+                      className="absolute top-2 right-9 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
                         ? `Birthday today! (${birthdayInfo.formattedDate})` 
                         : `Birthday in ${birthdayInfo.daysUntil} day${birthdayInfo.daysUntil !== 1 ? 's' : ''} (${birthdayInfo.formattedDate})`
