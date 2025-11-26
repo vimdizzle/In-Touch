@@ -259,7 +259,7 @@ export default function Home() {
 
       // Reload contacts to reflect the change
       await loadContacts(user.id);
-    } catch (err: any) {
+      } catch (err: any) {
       alert(`Error toggling pin: ${err.message}`);
     }
   };
@@ -893,19 +893,19 @@ export default function Home() {
                         </button>
                         {openContactMenu === contact.id && (
                           <div className="absolute bottom-full left-0 mb-2 w-full bg-[#0b1120] border border-gray-700 rounded-lg shadow-lg overflow-hidden z-30">
-                            <button
+                            <a
+                              href="tel:"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenContactMenu(null);
-                                window.location.href = "tel:";
                               }}
-                              className="w-full px-4 py-2 text-sm text-gray-300 hover:bg-[#111827] hover:text-white transition-colors flex items-center gap-2 text-left"
+                              className="block w-full px-4 py-2 text-sm text-gray-300 hover:bg-[#111827] hover:text-white transition-colors flex items-center gap-2"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                               </svg>
                               Call
-                            </button>
+                            </a>
                             <a
                               href="sms:"
                               onClick={(e) => {
@@ -1026,7 +1026,7 @@ export default function Home() {
                       })()}
                       {` • ${formatCadence(contact.cadence_days)}`}
                     </p>
-                  </div>
+          </div>
 
                   <div className="mb-4">
                     <p className="text-xs text-gray-400">
@@ -1056,19 +1056,19 @@ export default function Home() {
                         </button>
                         {openContactMenu === contact.id && (
                           <div className="absolute bottom-full left-0 mb-2 w-full bg-[#0b1120] border border-gray-700 rounded-lg shadow-lg overflow-hidden z-30">
-                            <button
+                            <a
+                              href="tel:"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenContactMenu(null);
-                                window.location.href = "tel:";
                               }}
-                              className="w-full px-4 py-2 text-sm text-gray-300 hover:bg-[#111827] hover:text-white transition-colors flex items-center gap-2 text-left"
+                              className="block w-full px-4 py-2 text-sm text-gray-300 hover:bg-[#111827] hover:text-white transition-colors flex items-center gap-2"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                               </svg>
                               Call
-                            </button>
+                            </a>
                             <a
                               href="sms:"
                               onClick={(e) => {
@@ -1110,7 +1110,7 @@ export default function Home() {
             >
               Add Your First Contact
             </button>
-          </div>
+        </div>
         )}
       </div>
     </div>
