@@ -208,6 +208,7 @@ export default function Home() {
           status,
           days_until_due: daysUntilDue,
           days_overdue: daysOverdue,
+          is_pinned: contact.is_pinned === true, // Explicitly ensure boolean
         };
       });
 
@@ -766,6 +767,7 @@ export default function Home() {
               {comingUpContacts.map((contact) => {
                 const birthdayInfo = getBirthdayInfo(contact.birthday);
                 const hasUpcomingBirthday = birthdayInfo !== null;
+                const isPinned = contact.is_pinned === true;
                 
                 return (
                 <div
@@ -776,7 +778,7 @@ export default function Home() {
                       : "border border-gray-800 hover:border-cyan-500/50"
                   }`}
                 >
-                  {contact.is_pinned && (
+                  {isPinned && (
                     <div 
                       className="absolute top-2 right-2 text-cyan-400 z-10"
                       title="Pinned - Always in Get in touch"
@@ -786,7 +788,7 @@ export default function Home() {
                       </svg>
                     </div>
                   )}
-                  {hasUpcomingBirthday && !contact.is_pinned && (
+                  {hasUpcomingBirthday && !isPinned && (
                     <div 
                       className="absolute top-2 right-2 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
@@ -797,7 +799,7 @@ export default function Home() {
                       🎂
                     </div>
                   )}
-                  {hasUpcomingBirthday && contact.is_pinned && (
+                  {hasUpcomingBirthday && isPinned && (
                     <div 
                       className="absolute top-2 right-9 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
