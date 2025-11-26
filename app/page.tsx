@@ -813,7 +813,7 @@ export default function Home() {
                       title="Click to unpin"
                     >
                       <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M16 12V2H6v10c0 3.314-2.686 6-6 6h2c0 3.314 2.686 6 6 6s6-2.686 6-6h2c-3.314 0-6-2.686-6-6z" />
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                       </svg>
                     </button>
                   )}
