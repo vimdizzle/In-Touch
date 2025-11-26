@@ -190,13 +190,13 @@ export default function Home() {
         }
 
         // Override status to "coming_up" if pinned (regardless of cadence)
-        if (contact.is_pinned === true) {
+        if (contact.is_pinned) {
           status = "coming_up";
         }
         
         // Override status to "coming_up" if birthday is within 7 days (regardless of cadence)
         // Note: Pin takes precedence, but birthday can still override if not pinned
-        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track" && !(contact.is_pinned === true)) {
+        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track" && !contact.is_pinned) {
           status = "coming_up";
         }
 
@@ -776,7 +776,7 @@ export default function Home() {
                       : "border border-gray-800 hover:border-cyan-500/50"
                   }`}
                 >
-                  {(contact.is_pinned === true) && (
+                  {contact.is_pinned && (
                     <div 
                       className="absolute top-2 right-2 text-cyan-400 z-10"
                       title="Pinned - Always in Get in touch"
@@ -786,7 +786,7 @@ export default function Home() {
                       </svg>
                     </div>
                   )}
-                  {hasUpcomingBirthday && !(contact.is_pinned === true) && (
+                  {hasUpcomingBirthday && !contact.is_pinned && (
                     <div 
                       className="absolute top-2 right-2 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
@@ -797,7 +797,7 @@ export default function Home() {
                       🎂
                     </div>
                   )}
-                  {hasUpcomingBirthday && (contact.is_pinned === true) && (
+                  {hasUpcomingBirthday && contact.is_pinned && (
                     <div 
                       className="absolute top-2 right-9 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
