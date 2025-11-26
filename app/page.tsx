@@ -21,6 +21,7 @@ interface Contact {
   status: "overdue" | "coming_up" | "on_track";
   days_until_due?: number;
   days_overdue?: number;
+  is_pinned?: boolean;
 }
 
 export default function Home() {
@@ -188,8 +189,14 @@ export default function Home() {
           }
         }
 
+        // Override status to "coming_up" if pinned (regardless of cadence)
+        if (contact.is_pinned) {
+          status = "coming_up";
+        }
+        
         // Override status to "coming_up" if birthday is within 7 days (regardless of cadence)
-        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track") {
+        // Note: Pin takes precedence, but birthday can still override if not pinned
+        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track" && !contact.is_pinned) {
           status = "coming_up";
         }
 

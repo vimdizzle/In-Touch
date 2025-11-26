@@ -16,6 +16,7 @@ interface Contact {
   cadence_days: number;
   notes?: string | null;
   created_at: string;
+  is_pinned?: boolean;
 }
 
 interface Touchpoint {
