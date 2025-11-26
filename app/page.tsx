@@ -33,6 +33,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [comingUpSort, setComingUpSort] = useState<"next_touch" | "name">("next_touch");
   const [onTrackSort, setOnTrackSort] = useState<"next_touch" | "name">("next_touch");
+  const [openContactMenu, setOpenContactMenu] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,6 +44,17 @@ export default function Home() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Close contact menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenContactMenu(null);
+    };
+    if (openContactMenu) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [openContactMenu]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
