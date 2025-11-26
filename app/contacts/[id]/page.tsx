@@ -898,17 +898,6 @@ function ContactDetailContent() {
             ) : (
               <>
                 <button
-                  onClick={handleTogglePin}
-                  disabled={saving}
-                  className={`px-6 py-3 rounded-md transition-colors font-medium disabled:opacity-50 ${
-                    isPinned
-                      ? "bg-cyan-500 hover:bg-cyan-600 text-white"
-                      : "text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600"
-                  }`}
-                >
-                  {saving ? "Saving..." : isPinned ? "Unpin" : "Pin to Get in touch"}
-                </button>
-                <button
                   onClick={() => setEditing(true)}
                   className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium"
                 >
