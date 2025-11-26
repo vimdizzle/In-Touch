@@ -190,13 +190,13 @@ export default function Home() {
         }
 
         // Override status to "coming_up" if pinned (regardless of cadence)
-        if (contact.is_pinned) {
+        if (contact.is_pinned === true) {
           status = "coming_up";
         }
         
         // Override status to "coming_up" if birthday is within 7 days (regardless of cadence)
         // Note: Pin takes precedence, but birthday can still override if not pinned
-        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track" && !contact.is_pinned) {
+        if (isBirthdayWithin7Days(contact.birthday) && status === "on_track" && !(contact.is_pinned === true)) {
           status = "coming_up";
         }
 
@@ -776,17 +776,17 @@ export default function Home() {
                       : "border border-gray-800 hover:border-cyan-500/50"
                   }`}
                 >
-                  {contact.is_pinned && (
+                  {(contact.is_pinned === true) && (
                     <div 
-                      className="absolute top-2 right-2 text-cyan-400"
+                      className="absolute top-2 right-2 text-cyan-400 z-10"
                       title="Pinned - Always in Get in touch"
                     >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616v1.423l1.822 3.283a1 1 0 01-.302 1.384l-1.08.624 1.08.624a1 1 0 01.302 1.384l-1.822 3.283v1.423l1.233.617a1 1 0 11-.894 1.788l-1.599-.8L11 16.677V18a1 1 0 11-2 0v-1.323l-3.954-1.582-1.599.8a1 1 0 11-.894-1.788l1.233-.617v-1.423L2.564 9.384a1 1 0 01.302-1.384l-1.08-.624 1.08-.624a1 1 0 01-.302-1.384l1.822-3.283V1.701L3.553 1.084a1 1 0 01.894-1.788l1.599.8L9 2.677V4a1 1 0 001 1h.01z" />
                       </svg>
                     </div>
                   )}
-                  {hasUpcomingBirthday && !contact.is_pinned && (
+                  {hasUpcomingBirthday && !(contact.is_pinned === true) && (
                     <div 
                       className="absolute top-2 right-2 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
@@ -797,7 +797,7 @@ export default function Home() {
                       🎂
                     </div>
                   )}
-                  {hasUpcomingBirthday && contact.is_pinned && (
+                  {hasUpcomingBirthday && (contact.is_pinned === true) && (
                     <div 
                       className="absolute top-2 right-9 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
