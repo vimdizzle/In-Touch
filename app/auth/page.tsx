@@ -68,9 +68,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#020617] flex items-center sm:items-center items-start justify-center p-4 pt-8 sm:pt-4">
       <div className="max-w-md w-full bg-[#0b1120] border border-gray-800 rounded-lg p-6 sm:p-8">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
             IN TOUCH
           </h1>
