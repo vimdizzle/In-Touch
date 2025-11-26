@@ -109,6 +109,7 @@ function ContactDetailContent() {
   const [editTouchpointNote, setEditTouchpointNote] = useState("");
   const [showDeleteTouchpointConfirm, setShowDeleteTouchpointConfirm] = useState<string | null>(null);
   const [deletingTouchpointId, setDeletingTouchpointId] = useState<string | null>(null);
+  const [isPinned, setIsPinned] = useState(false);
 
   const router = useRouter();
   const params = useParams();
