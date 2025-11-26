@@ -154,6 +154,7 @@ function ContactDetailContent() {
     setEditBirthdayMonth(month);
     setEditBirthdayDay(day);
     setEditCadenceDays(data.cadence_days);
+    setIsPinned(data.is_pinned || false);
   };
 
   const loadTouchpoints = async () => {
