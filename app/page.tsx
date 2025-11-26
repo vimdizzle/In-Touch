@@ -38,7 +38,11 @@ export default function Home() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+      // Check for mobile devices using multiple methods
+      const isMobileWidth = window.innerWidth < 640;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isMobileUserAgent = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      setIsMobile(isMobileWidth || (isTouchDevice && isMobileUserAgent));
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
