@@ -30,6 +30,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [comingUpSort, setComingUpSort] = useState<"next_touch" | "name">("next_touch");
+  const [onTrackSort, setOnTrackSort] = useState<"next_touch" | "name">("next_touch");
   const router = useRouter();
 
   useEffect(() => {
@@ -578,8 +580,35 @@ export default function Home() {
   const allComingUpContacts = contacts.filter((c) => c.status === "coming_up" || c.status === "overdue");
   const allOnTrackContacts = contacts.filter((c) => c.status === "on_track");
   
-  const comingUpContacts = filterContacts(allComingUpContacts);
-  const onTrackContacts = filterContacts(allOnTrackContacts);
+  // Sort contacts
+  const sortContacts = (contactList: Contact[], sortMode: "next_touch" | "name"): Contact[] => {
+    const sorted = [...contactList];
+    if (sortMode === "name") {
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      // Sort by "Next touch" - closest to furthest
+      return sorted.sort((a, b) => {
+        // Get days until next touch for each contact
+        const getDaysUntilNextTouch = (contact: Contact): number => {
+          if (contact.status === "overdue") return 0; // Overdue = 0 days
+          if (contact.status === "coming_up" && contact.days_until_due !== undefined) {
+            return contact.days_until_due;
+          }
+          if (contact.status === "on_track" && contact.days_until_due !== undefined) {
+            return contact.days_until_due;
+          }
+          return 999; // Fallback for contacts without due date
+        };
+        
+        const aDays = getDaysUntilNextTouch(a);
+        const bDays = getDaysUntilNextTouch(b);
+        return aDays - bDays; // Closest to furthest
+      });
+    }
+  };
+  
+  const comingUpContacts = sortContacts(filterContacts(allComingUpContacts), comingUpSort);
+  const onTrackContacts = sortContacts(filterContacts(allOnTrackContacts), onTrackSort);
 
   if (loading) {
     return (
@@ -705,10 +734,25 @@ export default function Home() {
         {/* Coming Up Section (includes overdue) */}
         {(comingUpContacts.length > 0 || !searchQuery.trim()) && (
           <div className="mb-8">
-            <div className="mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="text-2xl font-bold text-white">
                 Get in touch:
               </h3>
+              <button
+                onClick={() => setComingUpSort(comingUpSort === "next_touch" ? "name" : "next_touch")}
+                className="p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                title={comingUpSort === "next_touch" ? "Sort by: Next Touch" : "Sort by: Name (A-Z)"}
+              >
+                {comingUpSort === "next_touch" ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                )}
+              </button>
             </div>
             {comingUpContacts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -791,9 +835,26 @@ export default function Home() {
         {/* On Track Section (optional, can be collapsed) */}
         {(onTrackContacts.length > 0 || !searchQuery.trim()) && (
           <div className="mb-8">
-            <h3 className="text-2xl font-bold text-white mb-4">
-              Already in touch:
-            </h3>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-white">
+                Already in touch:
+              </h3>
+              <button
+                onClick={() => setOnTrackSort(onTrackSort === "next_touch" ? "name" : "next_touch")}
+                className="p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                title={onTrackSort === "next_touch" ? "Sort by: Next Touch" : "Sort by: Name (A-Z)"}
+              >
+                {onTrackSort === "next_touch" ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                )}
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {onTrackContacts.map((contact) => {
                 const birthdayInfo = getBirthdayInfo(contact.birthday);
