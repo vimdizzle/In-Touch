@@ -815,9 +815,9 @@ export default function Home() {
                     }`}
                     title={isPinned ? "Click to unpin" : "Click to pin"}
                   >
-                    <svg className="w-5 h-5" fill={isPinned ? "currentColor" : "none"} stroke={isPinned ? "none" : "currentColor"} strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C9.24 2 7 4.24 7 7c0 4.5 5 11 5 11s5-6.5 5-11c0-2.76-2.24-5-5-5zm0 7.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                      <path d="M12 18v4M8 22h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <svg className="w-5 h-5" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="7" r="3.5" fill={isPinned ? "currentColor" : "none"}/>
+                      <path d="M12 10.5v11M9 21.5h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
                   </button>
                   {hasUpcomingBirthday && (
@@ -933,9 +933,9 @@ export default function Home() {
                     }`}
                     title={isPinned ? "Click to unpin" : "Click to pin"}
                   >
-                    <svg className="w-5 h-5" fill={isPinned ? "currentColor" : "none"} stroke={isPinned ? "none" : "currentColor"} strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C9.24 2 7 4.24 7 7c0 4.5 5 11 5 11s5-6.5 5-11c0-2.76-2.24-5-5-5zm0 7.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                      <path d="M12 18v4M8 22h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <svg className="w-5 h-5" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="7" r="3.5" fill={isPinned ? "currentColor" : "none"}/>
+                      <path d="M12 10.5v11M9 21.5h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
                   </button>
                   {hasUpcomingBirthday && (
