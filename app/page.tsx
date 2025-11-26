@@ -223,6 +223,31 @@ export default function Home() {
     router.push("/auth");
   };
 
+  const handleTogglePin = async (contactId: string) => {
+    if (!user) return;
+
+    try {
+      // Find the current contact to get its pin status
+      const currentContact = contacts.find(c => c.id === contactId);
+      if (!currentContact) return;
+
+      const newPinStatus = !currentContact.is_pinned;
+
+      const { error } = await supabase
+        .from("contacts")
+        .update({ is_pinned: newPinStatus })
+        .eq("id", contactId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      // Reload contacts to reflect the change
+      await loadContacts(user.id);
+    } catch (err: any) {
+      alert(`Error toggling pin: ${err.message}`);
+    }
+  };
+
   const formatCadence = (days: number) => {
     if (days === 7) return "Weekly";
     if (days === 30) return "Monthly";
@@ -779,14 +804,18 @@ export default function Home() {
                   }`}
                 >
                   {isPinned && (
-                    <div 
-                      className="absolute top-2 right-2 text-cyan-400 z-20 bg-[#0b1120] rounded-full p-1"
-                      title="Pinned - Always in Get in touch"
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTogglePin(contact.id);
+                      }}
+                      className="absolute top-2 right-2 text-cyan-400 z-20 bg-[#0b1120] rounded-full p-1 hover:bg-[#111827] hover:text-cyan-300 transition-colors cursor-pointer"
+                      title="Click to unpin"
                     >
                       <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616v1.423l1.822 3.283a1 1 0 01-.302 1.384l-1.08.624 1.08.624a1 1 0 01.302 1.384l-1.822 3.283v1.423l1.233.617a1 1 0 11-.894 1.788l-1.599-.8L11 16.677V18a1 1 0 11-2 0v-1.323l-3.954-1.582-1.599.8a1 1 0 11-.894-1.788l1.233-.617v-1.423L2.564 9.384a1 1 0 01.302-1.384l-1.08-.624 1.08-.624a1 1 0 01-.302-1.384l1.822-3.283V1.701L3.553 1.084a1 1 0 01.894-1.788l1.599.8L9 2.677V4a1 1 0 001 1h.01z" />
                       </svg>
-                    </div>
+                    </button>
                   )}
                   {hasUpcomingBirthday && !isPinned && (
                     <div 
