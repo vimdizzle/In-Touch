@@ -780,7 +780,7 @@ export default function Home() {
                 >
                   {isPinned && (
                     <div 
-                      className="absolute top-2 right-2 text-cyan-400 z-10"
+                      className="absolute top-2 right-2 text-cyan-400 z-20 bg-[#0b1120] rounded-full p-1"
                       title="Pinned - Always in Get in touch"
                     >
                       <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
