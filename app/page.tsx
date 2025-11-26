@@ -776,9 +776,30 @@ export default function Home() {
                       : "border border-gray-800 hover:border-cyan-500/50"
                   }`}
                 >
-                  {hasUpcomingBirthday && (
+                  {contact.is_pinned && (
+                    <div 
+                      className="absolute top-2 right-2 text-cyan-400"
+                      title="Pinned - Always in Get in touch"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616v1.423l1.822 3.283a1 1 0 01-.302 1.384l-1.08.624 1.08.624a1 1 0 01.302 1.384l-1.822 3.283v1.423l1.233.617a1 1 0 11-.894 1.788l-1.599-.8L11 16.677V18a1 1 0 11-2 0v-1.323l-3.954-1.582-1.599.8a1 1 0 11-.894-1.788l1.233-.617v-1.423L2.564 9.384a1 1 0 01.302-1.384l-1.08-.624 1.08-.624a1 1 0 01-.302-1.384l1.822-3.283V1.701L3.553 1.084a1 1 0 01.894-1.788l1.599.8L9 2.677V4a1 1 0 001 1h.01z" />
+                      </svg>
+                    </div>
+                  )}
+                  {hasUpcomingBirthday && !contact.is_pinned && (
                     <div 
                       className="absolute top-2 right-2 text-2xl cursor-help"
+                      title={birthdayInfo.isToday 
+                        ? `Birthday today! (${birthdayInfo.formattedDate})` 
+                        : `Birthday in ${birthdayInfo.daysUntil} day${birthdayInfo.daysUntil !== 1 ? 's' : ''} (${birthdayInfo.formattedDate})`
+                      }
+                    >
+                      🎂
+                    </div>
+                  )}
+                  {hasUpcomingBirthday && contact.is_pinned && (
+                    <div 
+                      className="absolute top-2 right-9 text-2xl cursor-help"
                       title={birthdayInfo.isToday 
                         ? `Birthday today! (${birthdayInfo.formattedDate})` 
                         : `Birthday in ${birthdayInfo.daysUntil} day${birthdayInfo.daysUntil !== 1 ? 's' : ''} (${birthdayInfo.formattedDate})`
