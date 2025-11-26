@@ -881,13 +881,13 @@ export default function Home() {
                       Log
                     </button>
                     {isMobile && (
-                      <div className="relative flex-1">
+                      <div className="relative flex-1 min-w-0">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenContactMenu(openContactMenu === contact.id ? null : contact.id);
                           }}
-                          className="w-full px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                          className="w-full py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                         >
                           Contact
                         </button>
