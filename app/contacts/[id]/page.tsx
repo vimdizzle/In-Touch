@@ -102,6 +102,12 @@ function ContactDetailContent() {
   const [editCadenceDays, setEditCadenceDays] = useState(30);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingTouchpointId, setEditingTouchpointId] = useState<string | null>(null);
+  const [editTouchpointChannel, setEditTouchpointChannel] = useState("");
+  const [editTouchpointDate, setEditTouchpointDate] = useState("");
+  const [editTouchpointNote, setEditTouchpointNote] = useState("");
+  const [showDeleteTouchpointConfirm, setShowDeleteTouchpointConfirm] = useState<string | null>(null);
+  const [deletingTouchpointId, setDeletingTouchpointId] = useState<string | null>(null);
 
   const router = useRouter();
   const params = useParams();
@@ -280,6 +286,74 @@ function ContactDetailContent() {
       alert(`Error deleting contact: ${err.message}`);
       setDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleStartEditTouchpoint = (touchpoint: Touchpoint) => {
+    setEditingTouchpointId(touchpoint.id);
+    setEditTouchpointChannel(touchpoint.channel);
+    // Format date for input (YYYY-MM-DD)
+    const date = new Date(touchpoint.contact_date);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    setEditTouchpointDate(`${year}-${month}-${day}`);
+    setEditTouchpointNote(touchpoint.note || "");
+  };
+
+  const handleCancelEditTouchpoint = () => {
+    setEditingTouchpointId(null);
+    setEditTouchpointChannel("");
+    setEditTouchpointDate("");
+    setEditTouchpointNote("");
+  };
+
+  const handleSaveEditTouchpoint = async () => {
+    if (!editingTouchpointId || !editTouchpointChannel || !editTouchpointDate) {
+      alert("Please fill in channel and date");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("touchpoints")
+        .update({
+          channel: editTouchpointChannel,
+          contact_date: editTouchpointDate,
+          note: editTouchpointNote.trim() || null,
+        })
+        .eq("id", editingTouchpointId);
+
+      if (error) throw error;
+
+      // Reload touchpoints
+      await loadTouchpoints();
+      handleCancelEditTouchpoint();
+    } catch (err: any) {
+      alert(`Error updating touchpoint: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTouchpoint = async (touchpointId: string) => {
+    setDeletingTouchpointId(touchpointId);
+    try {
+      const { error } = await supabase
+        .from("touchpoints")
+        .delete()
+        .eq("id", touchpointId);
+
+      if (error) throw error;
+
+      // Reload touchpoints
+      await loadTouchpoints();
+      setShowDeleteTouchpointConfirm(null);
+    } catch (err: any) {
+      alert(`Error deleting touchpoint: ${err.message}`);
+    } finally {
+      setDeletingTouchpointId(null);
     }
   };
 
@@ -671,18 +745,101 @@ function ContactDetailContent() {
                       key={touchpoint.id}
                       className="border-b border-gray-800 pb-4 last:border-0 last:pb-0"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="text-white font-medium">
-                            {CHANNEL_LABELS[touchpoint.channel] || touchpoint.channel}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            {formatDate(touchpoint.contact_date)}
-                          </p>
+                      {editingTouchpointId === touchpoint.id ? (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Channel *
+                            </label>
+                            <select
+                              value={editTouchpointChannel}
+                              onChange={(e) => setEditTouchpointChannel(e.target.value)}
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            >
+                              {Object.entries(CHANNEL_LABELS).map(([value, label]) => (
+                                <option key={value} value={value}>
+                                  {label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Date *
+                            </label>
+                            <input
+                              type="date"
+                              value={editTouchpointDate}
+                              onChange={(e) => setEditTouchpointDate(e.target.value)}
+                              required
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 min-h-[44px] sm:min-h-0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Note
+                            </label>
+                            <textarea
+                              value={editTouchpointNote}
+                              onChange={(e) => setEditTouchpointNote(e.target.value)}
+                              rows={3}
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                              placeholder="Optional note..."
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleSaveEditTouchpoint}
+                              disabled={saving || !editTouchpointChannel || !editTouchpointDate}
+                              className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm disabled:opacity-50 transition-colors"
+                            >
+                              {saving ? "Saving..." : "Save"}
+                            </button>
+                            <button
+                              onClick={handleCancelEditTouchpoint}
+                              disabled={saving}
+                              className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      {touchpoint.note && (
-                        <p className="text-sm text-gray-300 mt-2">{touchpoint.note}</p>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="text-white font-medium">
+                                {CHANNEL_LABELS[touchpoint.channel] || touchpoint.channel}
+                              </p>
+                              <p className="text-sm text-gray-400">
+                                {formatDate(touchpoint.contact_date)}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleStartEditTouchpoint(touchpoint)}
+                                className="p-1.5 text-gray-400 hover:text-cyan-400 transition-colors"
+                                title="Edit touchpoint"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => setShowDeleteTouchpointConfirm(touchpoint.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
+                                title="Delete touchpoint"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          {touchpoint.note && (
+                            <p className="text-sm text-gray-300 mt-2">{touchpoint.note}</p>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
@@ -732,7 +889,7 @@ function ContactDetailContent() {
           </div>
         </div>
 
-        {/* Delete Confirmation Modal */}
+        {/* Delete Contact Confirmation Modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 max-w-md w-full">
@@ -754,6 +911,34 @@ function ContactDetailContent() {
                   className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
                 >
                   {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Touchpoint Confirmation Modal */}
+        {showDeleteTouchpointConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-xl font-semibold text-white mb-2">Delete Touchpoint</h3>
+              <p className="text-gray-400 mb-6">
+                Are you sure you want to delete this touchpoint? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteTouchpointConfirm(null)}
+                  disabled={!!deletingTouchpointId}
+                  className="flex-1 px-4 py-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteTouchpoint(showDeleteTouchpointConfirm)}
+                  disabled={!!deletingTouchpointId}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  {deletingTouchpointId === showDeleteTouchpointConfirm ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

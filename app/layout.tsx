@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "In Touch",
-  description: "Stay in touch with the people who matter",
+  description: "Stay in touch with the people who matter.",
 };
 
 export default function RootLayout({
