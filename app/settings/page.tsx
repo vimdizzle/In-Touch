@@ -19,6 +19,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [name, setName] = useState("");
   const [dailyReminderTime, setDailyReminderTime] = useState("09:00");
@@ -146,6 +148,49 @@ export default function SettingsPage() {
       setError(err.message || "Failed to save settings");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      // Step 1: Delete all contacts (this will cascade delete touchpoints due to ON DELETE CASCADE)
+      const { error: contactsError } = await supabase
+        .from("contacts")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (contactsError) throw contactsError;
+
+      // Step 2: Delete user from users table
+      const { error: userError } = await supabase
+        .from("users")
+        .delete()
+        .eq("id", user.id);
+
+      if (userError) throw userError;
+
+      // Step 3: Delete auth user account
+      // Note: This requires the user to be authenticated
+      const { error: authError } = await supabase.auth.deleteUser();
+
+      if (authError) {
+        // If auth deletion fails, we've already deleted the data, so log the error
+        console.error("Error deleting auth account:", authError);
+        // Still sign out and redirect
+      }
+
+      // Step 4: Sign out and redirect to auth page
+      await supabase.auth.signOut();
+      router.push("/auth");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete account. Please try again.");
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -279,6 +324,54 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+
+        {/* Delete Account Section */}
+        <div className="mt-12 border-t border-gray-800 pt-8">
+          <div className="bg-[#0b1120] border border-red-800/50 rounded-lg p-4 sm:p-6">
+            <h3 className="text-lg font-semibold mb-2 text-red-400">Danger Zone</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Once you delete your account, there is no going back. This will permanently delete your account and all your contacts.
+            </p>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+            >
+              {deleting ? "Deleting..." : "Delete Account"}
+            </button>
+          </div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#0b1120] border border-red-800 rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold text-red-400 mb-4">Delete Account</h3>
+              <p className="text-gray-300 mb-6">
+                Are you sure you want to delete your account? This action cannot be undone. All your contacts and data will be permanently deleted.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setError("");
+                  }}
+                  disabled={deleting}
+                  className="px-4 py-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed font-medium"
+                >
+                  {deleting ? "Deleting..." : "Delete Account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
