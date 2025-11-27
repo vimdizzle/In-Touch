@@ -876,18 +876,18 @@ export default function Home() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                      className="flex-[1_1_0%] box-border bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors border border-transparent"
                     >
                       Log
                     </button>
                     {isMobile && (
-                      <div className="relative flex-1 min-w-0">
+                      <div className="relative flex-[1_1_0%] min-w-0 box-border">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenContactMenu(openContactMenu === contact.id ? null : contact.id);
                           }}
-                          className="w-full py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                          className="w-full box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                         >
                           Contact
                         </button>
@@ -925,7 +925,7 @@ export default function Home() {
                     )}
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="flex-1 py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                      className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       View
                     </button>
@@ -1088,7 +1088,7 @@ export default function Home() {
                     )}
                     <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="flex-1 py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                      className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       View
                     </button>
