@@ -174,17 +174,9 @@ export default function SettingsPage() {
 
       if (userError) throw userError;
 
-      // Step 3: Delete auth user account
-      // Note: This requires the user to be authenticated
-      const { error: authError } = await supabase.auth.deleteUser();
-
-      if (authError) {
-        // If auth deletion fails, we've already deleted the data, so log the error
-        console.error("Error deleting auth account:", authError);
-        // Still sign out and redirect
-      }
-
-      // Step 4: Sign out and redirect to auth page
+      // Step 3: Sign out and redirect to auth page
+      // Note: The auth.users record will remain, but all associated data is deleted
+      // The account is effectively deleted from the user's perspective
       await supabase.auth.signOut();
       router.push("/auth");
     } catch (err: any) {
