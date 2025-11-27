@@ -934,7 +934,7 @@ function ContactDetailContent() {
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleting ? "Deleting..." : "Delete"}
                 </button>
@@ -962,7 +962,7 @@ function ContactDetailContent() {
                 <button
                   onClick={() => handleDeleteTouchpoint(showDeleteTouchpointConfirm)}
                   disabled={!!deletingTouchpointId}
-                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deletingTouchpointId === showDeleteTouchpointConfirm ? "Deleting..." : "Delete"}
                 </button>
