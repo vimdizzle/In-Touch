@@ -23,7 +23,6 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
 
   const [name, setName] = useState("");
-  const [dailyReminderTime, setDailyReminderTime] = useState("09:00");
   const [defaultCadenceDays, setDefaultCadenceDays] = useState(30);
 
   const router = useRouter();
@@ -60,7 +59,6 @@ export default function SettingsPage() {
         // For now, we'll store settings in the users table
         // In a future version, you might want a separate settings table
         // Handle case where columns might not exist yet (graceful fallback)
-        setDailyReminderTime((userData as any).daily_reminder_time || "09:00");
         setDefaultCadenceDays((userData as any).default_cadence_days || 30);
       } else {
         // Create user profile if it doesn't exist
@@ -77,7 +75,6 @@ export default function SettingsPage() {
             await supabase.from("users").insert([
               {
                 ...insertData,
-                daily_reminder_time: "09:00",
                 default_cadence_days: 30,
               },
             ]);
@@ -114,14 +111,13 @@ export default function SettingsPage() {
           .from("users")
           .update({
             ...updateData,
-            daily_reminder_time: dailyReminderTime,
             default_cadence_days: defaultCadenceDays,
           })
           .eq("id", user.id);
 
         if (updateError) {
           // If columns don't exist, just update name
-          if (updateError.message.includes("daily_reminder_time") || updateError.message.includes("default_cadence_days")) {
+          if (updateError.message.includes("default_cadence_days")) {
             const { error: nameOnlyError } = await supabase
               .from("users")
               .update(updateData)
@@ -263,22 +259,6 @@ export default function SettingsPage() {
           <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">Preferences</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Daily Reminder Time
-                </label>
-                <input
-                  type="time"
-                  value={dailyReminderTime}
-                  onChange={(e) => setDailyReminderTime(e.target.value)}
-                  className="w-full max-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base box-border"
-                  style={{ WebkitAppearance: 'none', appearance: 'none' }}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  When to generate your "Today" list (for future notifications)
-                </p>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Default Cadence for New Contacts
