@@ -239,6 +239,66 @@ export default function Home() {
     router.push("/auth");
   };
 
+  // Helper function to recalculate status based on pin status
+  // Uses existing contact data and only updates status based on pin
+  const updateContactStatusForPin = (contact: Contact, isPinned: boolean): Contact => {
+    let status: "overdue" | "coming_up" | "on_track" = contact.status;
+    
+    // If pinning, always set to "coming_up"
+    if (isPinned) {
+      status = "coming_up";
+    } else {
+      // If unpinning, recalculate based on existing days_until_due
+      // Use the same logic as in loadContacts
+      if (contact.days_until_due !== undefined) {
+        if (contact.days_until_due < 0) {
+          status = "overdue";
+        } else if (contact.days_until_due <= 7) {
+          status = "coming_up";
+        } else {
+          status = "on_track";
+        }
+      } else {
+        // Fallback: if no days_until_due, keep current status but check if it should be on_track
+        if (contact.status === "coming_up" && !isPinned) {
+          // Only change from coming_up to on_track if we have enough info
+          // Otherwise keep the status as is
+          status = contact.status;
+        }
+      }
+      
+      // Check birthday override (only if unpinning and status would be on_track)
+      if (status === "on_track" && contact.birthday) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        try {
+          const birthdayDate = new Date(contact.birthday);
+          const currentYear = today.getFullYear();
+          const birthdayMonth = birthdayDate.getMonth();
+          const birthdayDay = birthdayDate.getDate();
+          let nextBirthday = new Date(currentYear, birthdayMonth, birthdayDay);
+          if (nextBirthday < today) {
+            nextBirthday = new Date(currentYear + 1, birthdayMonth, birthdayDay);
+          }
+          const daysUntilBirthday = Math.floor(
+            (nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          if (daysUntilBirthday >= 0 && daysUntilBirthday <= 7) {
+            status = "coming_up";
+          }
+        } catch (error) {
+          // Ignore birthday parsing errors
+        }
+      }
+    }
+
+    return {
+      ...contact,
+      status,
+      is_pinned: isPinned,
+    };
+  };
+
   const handleTogglePin = async (contactId: string) => {
     if (!user) return;
 
@@ -248,11 +308,14 @@ export default function Home() {
 
     const newPinStatus = !currentContact.is_pinned;
 
-    // Optimistic update: update UI immediately
+    // Optimistic update: update UI immediately with recalculated status
     setContacts(prevContacts => 
-      prevContacts.map(c => 
-        c.id === contactId ? { ...c, is_pinned: newPinStatus } : c
-      )
+      prevContacts.map(c => {
+        if (c.id === contactId) {
+          return updateContactStatusForPin(c, newPinStatus);
+        }
+        return c;
+      })
     );
 
     // Update database in background (don't await)
@@ -265,9 +328,12 @@ export default function Home() {
         if (error) {
           // Revert on error
           setContacts(prevContacts => 
-            prevContacts.map(c => 
-              c.id === contactId ? { ...c, is_pinned: !newPinStatus } : c
-            )
+            prevContacts.map(c => {
+              if (c.id === contactId) {
+                return updateContactStatusForPin(c, !newPinStatus);
+              }
+              return c;
+            })
           );
           console.error("Error toggling pin:", error);
         }
