@@ -242,26 +242,36 @@ export default function Home() {
   const handleTogglePin = async (contactId: string) => {
     if (!user) return;
 
-    try {
-      // Find the current contact to get its pin status
-      const currentContact = contacts.find(c => c.id === contactId);
-      if (!currentContact) return;
+    // Find the current contact to get its pin status
+    const currentContact = contacts.find(c => c.id === contactId);
+    if (!currentContact) return;
 
-      const newPinStatus = !currentContact.is_pinned;
+    const newPinStatus = !currentContact.is_pinned;
 
-      const { error } = await supabase
-        .from("contacts")
-        .update({ is_pinned: newPinStatus })
-        .eq("id", contactId)
-        .eq("user_id", user.id);
+    // Optimistic update: update UI immediately
+    setContacts(prevContacts => 
+      prevContacts.map(c => 
+        c.id === contactId ? { ...c, is_pinned: newPinStatus } : c
+      )
+    );
 
-      if (error) throw error;
-
-      // Reload contacts to reflect the change
-      await loadContacts(user.id);
-      } catch (err: any) {
-      alert(`Error toggling pin: ${err.message}`);
-    }
+    // Update database in background (don't await)
+    supabase
+      .from("contacts")
+      .update({ is_pinned: newPinStatus })
+      .eq("id", contactId)
+      .eq("user_id", user.id)
+      .then(({ error }) => {
+        if (error) {
+          // Revert on error
+          setContacts(prevContacts => 
+            prevContacts.map(c => 
+              c.id === contactId ? { ...c, is_pinned: !newPinStatus } : c
+            )
+          );
+          console.error("Error toggling pin:", error);
+        }
+      });
   };
 
   const formatCadence = (days: number) => {
@@ -880,6 +890,12 @@ export default function Home() {
                     >
                       Log
                     </button>
+                    <button
+                      onClick={() => router.push(`/contacts/${contact.id}`)}
+                      className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                    >
+                      View
+                    </button>
                     {isMobile && (
                       <div className="relative flex-[1_1_0%] min-w-0 box-border">
                         <button
@@ -923,12 +939,6 @@ export default function Home() {
                         )}
                       </div>
                     )}
-                    <button
-                      onClick={() => router.push(`/contacts/${contact.id}`)}
-                      className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
-                    >
-                      View
-                    </button>
                   </div>
                 </div>
               );
