@@ -12,7 +12,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-gray-800 mt-auto">
+    <footer className="bg-[#020617] border-t border-gray-800 mt-auto">
       <div className="max-w-4xl mx-auto px-4 sm:px-8 py-6">
         <div className="flex items-center justify-center">
           <Link
