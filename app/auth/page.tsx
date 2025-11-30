@@ -129,7 +129,7 @@ export default function AuthPage() {
         <div className="mt-6 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors underline"
+            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
           >
             {isSignUp
               ? "Already have an account? Sign in"
