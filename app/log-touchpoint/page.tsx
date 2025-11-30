@@ -209,7 +209,7 @@ function LogTouchpointForm() {
               disabled={saving}
               className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-3 px-4 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {saving ? "Saving..." : "Log Touchpoint"}
+              {saving ? "Saving..." : "Log"}
             </button>
           </div>
         </form>

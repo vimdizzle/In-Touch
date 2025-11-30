@@ -89,6 +89,14 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCancel = async () => {
+    if (!user) return;
+    // Reset form to original values
+    await loadSettings(user.id);
+    setError("");
+    setSuccess(false);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -295,12 +303,20 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="flex justify-start">
+          {/* Cancel and Save Buttons */}
+          <div className="flex justify-start gap-3">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={saving}
+              className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium disabled:opacity-50"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white py-3 px-6 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
+              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
             >
               {saving ? "Saving..." : "Save"}
             </button>

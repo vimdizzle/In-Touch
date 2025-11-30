@@ -756,8 +756,7 @@ function ContactDetailContent() {
                   onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
                   className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md transition-colors font-medium text-sm"
                 >
-                  <span className="hidden sm:inline">Log touchpoint</span>
-                  <span className="sm:hidden">Log</span>
+                  Log
                 </button>
               </div>
               {touchpoints.length === 0 ? (
@@ -877,20 +876,20 @@ function ContactDetailContent() {
 
         {/* Edit and Delete Buttons */}
         <div className="mt-8 pt-8 border-t border-gray-800">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3">
             {editing ? (
               <>
                 <button
                   onClick={handleCancelEdit}
                   disabled={saving}
-                  className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={saving || !editName.trim()}
-                  className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  className="flex-1 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
                 >
                   {saving ? "Saving..." : "Save"}
                 </button>
@@ -899,14 +898,14 @@ function ContactDetailContent() {
               <>
                 <button
                   onClick={() => setEditing(true)}
-                  className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium"
+                  className="flex-1 px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={deleting}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleting ? "Deleting..." : "Delete Contact"}
                 </button>
