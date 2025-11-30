@@ -17,7 +17,7 @@ export default function Footer() {
         <div className="flex items-center justify-center">
           <Link
             href="/feedback"
-            className="text-gray-400 hover:text-white transition-colors text-sm"
+            className="text-gray-400 hover:text-white transition-colors text-sm underline"
           >
             Feedback
           </Link>

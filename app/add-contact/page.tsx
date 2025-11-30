@@ -442,7 +442,7 @@ export default function AddContactPage() {
                         <button
                           onClick={() => setShowDeleteConfirm(contact.id || "")}
                           disabled={deleting}
-                          className="px-3 py-1 text-xs text-red-400 hover:text-red-300 border border-red-800 rounded-md hover:border-red-700 transition-colors disabled:opacity-50"
+                          className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50"
                         >
                           Delete
                         </button>

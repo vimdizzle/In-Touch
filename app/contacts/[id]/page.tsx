@@ -722,13 +722,6 @@ function ContactDetailContent() {
                   />
                   <div className="flex gap-2">
                     <button
-                      onClick={handleSaveNotes}
-                      disabled={saving}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm disabled:opacity-50 transition-colors"
-                    >
-                      {saving ? "Saving..." : "Save"}
-                    </button>
-                    <button
                       onClick={() => {
                         setNotes(contact.notes || "");
                         setEditingNotes(false);
@@ -736,6 +729,13 @@ function ContactDetailContent() {
                       className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveNotes}
+                      disabled={saving}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm disabled:opacity-50 transition-colors"
+                    >
+                      {saving ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </div>
@@ -815,18 +815,18 @@ function ContactDetailContent() {
                           </div>
                           <div className="flex gap-2">
                             <button
-                              onClick={handleSaveEditTouchpoint}
-                              disabled={saving || !editTouchpointChannel || !editTouchpointDate}
-                              className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm disabled:opacity-50 transition-colors"
-                            >
-                              {saving ? "Saving..." : "Save"}
-                            </button>
-                            <button
                               onClick={handleCancelEditTouchpoint}
                               disabled={saving}
                               className="px-4 py-2 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors disabled:opacity-50"
                             >
                               Cancel
+                            </button>
+                            <button
+                              onClick={handleSaveEditTouchpoint}
+                              disabled={saving || !editTouchpointChannel || !editTouchpointDate}
+                              className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-md text-sm disabled:opacity-50 transition-colors"
+                            >
+                              {saving ? "Saving..." : "Save"}
                             </button>
                           </div>
                         </div>
@@ -881,18 +881,18 @@ function ContactDetailContent() {
             {editing ? (
               <>
                 <button
-                  onClick={handleSaveEdit}
-                  disabled={saving || !editName.trim()}
-                  className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </button>
-                <button
                   onClick={handleCancelEdit}
                   disabled={saving}
                   className="px-6 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors font-medium disabled:opacity-50"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={saving || !editName.trim()}
+                  className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors font-medium disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  {saving ? "Saving..." : "Save"}
                 </button>
               </>
             ) : (
@@ -906,7 +906,7 @@ function ContactDetailContent() {
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={deleting}
-                  className="px-6 py-3 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleting ? "Deleting..." : "Delete Contact"}
                 </button>
@@ -934,7 +934,7 @@ function ContactDetailContent() {
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex-1 px-4 py-2 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleting ? "Deleting..." : "Delete"}
                 </button>
@@ -962,7 +962,7 @@ function ContactDetailContent() {
                 <button
                   onClick={() => handleDeleteTouchpoint(showDeleteTouchpointConfirm)}
                   disabled={!!deletingTouchpointId}
-                  className="flex-1 px-4 py-2 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deletingTouchpointId === showDeleteTouchpointConfirm ? "Deleting..." : "Delete"}
                 </button>

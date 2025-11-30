@@ -296,13 +296,13 @@ export default function SettingsPage() {
           )}
 
           {/* Save Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-start">
             <button
               type="submit"
               disabled={saving}
               className="bg-cyan-500 hover:bg-cyan-600 text-white py-3 px-6 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {saving ? "Saving..." : "Save Settings"}
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
@@ -317,7 +317,7 @@ export default function SettingsPage() {
             <button
               onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting}
-              className="bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 py-2 px-4 rounded-md transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {deleting ? "Deleting..." : "Delete Account"}
             </button>
@@ -346,7 +346,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleDeleteAccount}
                   disabled={deleting}
-                  className="px-4 py-2 bg-transparent border border-red-600 hover:border-red-500 text-red-400 hover:text-red-300 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleting ? "Deleting..." : "Delete Account"}
                 </button>

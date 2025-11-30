@@ -177,13 +177,13 @@ export default function FeedbackPage() {
           )}
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-start">
             <button
               type="submit"
               disabled={submitting}
               className="bg-cyan-500 hover:bg-cyan-600 text-white py-3 px-6 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {submitting ? "Submitting..." : "Submit Feedback"}
+              {submitting ? "Submitting..." : "Submit"}
             </button>
           </div>
         </form>

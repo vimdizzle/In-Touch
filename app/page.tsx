@@ -951,16 +951,16 @@ export default function Home() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-[1_1_0%] box-border bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors border border-transparent"
-                    >
-                      Log
-                    </button>
-                    <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
                       className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       View
+                    </button>
+                    <button
+                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
+                      className="flex-[1_1_0%] box-border bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors border border-transparent"
+                    >
+                      Log
                     </button>
                   </div>
                 </div>
@@ -1071,16 +1071,16 @@ export default function Home() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
-                      className="flex-[1_1_0%] box-border bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors border border-transparent"
-                    >
-                      Log
-                    </button>
-                    <button
                       onClick={() => router.push(`/contacts/${contact.id}`)}
                       className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
                       View
+                    </button>
+                    <button
+                      onClick={() => router.push(`/log-touchpoint?contactId=${contact.id}`)}
+                      className="flex-[1_1_0%] box-border bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-3 rounded-md text-sm font-medium transition-colors border border-transparent"
+                    >
+                      Log
                     </button>
                   </div>
                 </div>
