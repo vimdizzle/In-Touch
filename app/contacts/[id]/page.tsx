@@ -170,28 +170,6 @@ function ContactDetailContent() {
     }
   };
 
-  const handleUpdateCadence = async (days: number) => {
-    if (!contact || !user) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("contacts")
-        .update({ cadence_days: days })
-        .eq("id", contactId)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setCadenceDays(days);
-      setContact({ ...contact, cadence_days: days });
-    } catch (err: any) {
-      alert(`Error updating cadence: ${err.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSaveNotes = async () => {
     if (!contact || !user) return;
 
@@ -630,53 +608,11 @@ function ContactDetailContent() {
             {!editing && (
               <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
                 <h3 className="text-lg font-semibold mb-4">Cadence</h3>
-                <div className="mb-4">
+                <div>
                   <p className="text-sm text-gray-400 mb-2">Connect every</p>
-                  <div className="flex items-center gap-2 mb-4">
-                    <input
-                      type="number"
-                      value={cadenceDays}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '') {
-                          setCadenceDays(0);
-                        } else {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num > 0) {
-                            setCadenceDays(num);
-                          }
-                        }
-                      }}
-                      min="1"
-                      className="w-24 px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                    <span className="text-gray-400">days</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {CADENCE_PRESETS.map((preset) => (
-                      <button
-                        key={preset.days}
-                        onClick={() => handleUpdateCadence(preset.days)}
-                        disabled={saving}
-                        className={`px-3 py-1 text-sm rounded-md border transition-colors ${
-                          cadenceDays === preset.days
-                            ? "bg-cyan-500 border-cyan-500 text-white"
-                            : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
-                        } disabled:opacity-50`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                  {cadenceDays !== contact.cadence_days && (
-                    <button
-                      onClick={() => handleUpdateCadence(cadenceDays)}
-                      disabled={saving}
-                      className="text-sm text-cyan-400 hover:text-cyan-300"
-                    >
-                      Save custom cadence
-                    </button>
-                  )}
+                  <p className="text-white text-lg">
+                    {contact.cadence_days} day{contact.cadence_days !== 1 ? "s" : ""}
+                  </p>
                 </div>
               </div>
             )}
