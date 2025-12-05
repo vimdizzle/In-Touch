@@ -416,6 +416,13 @@ export default function AddContactPage() {
                 {saving ? "Adding..." : "Add Contact"}
               </button>
             </form>
+            
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mt-4 p-3 bg-green-900/20 border border-green-800 text-green-400 rounded-md text-sm">
+                ✓ {successMessage} has been added to your contacts
+              </div>
+            )}
           </div>
 
           {/* Contacts List */}
