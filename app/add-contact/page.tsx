@@ -68,6 +68,7 @@ export default function AddContactPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
@@ -157,6 +158,10 @@ export default function AddContactPage() {
 
       setContacts([...contacts, data]);
       
+      // Show success message
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      
       // Reset form
       setName("");
       setCity("");
@@ -226,6 +231,13 @@ export default function AddContactPage() {
           <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">Add Contact</h3>
             <form onSubmit={handleAddContact} className="space-y-4">
+              {/* Success Message */}
+              {success && (
+                <div className="p-3 bg-green-900/20 border border-green-800 text-green-400 rounded-md text-sm">
+                  Contact added successfully!
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Name *
