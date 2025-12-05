@@ -636,7 +636,17 @@ function ContactDetailContent() {
                     <input
                       type="number"
                       value={cadenceDays}
-                      onChange={(e) => setCadenceDays(parseInt(e.target.value) || 30)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '') {
+                          setCadenceDays(0);
+                        } else {
+                          const num = parseInt(value);
+                          if (!isNaN(num) && num > 0) {
+                            setCadenceDays(num);
+                          }
+                        }
+                      }}
                       min="1"
                       className="w-24 px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     />
