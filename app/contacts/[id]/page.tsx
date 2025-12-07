@@ -43,25 +43,7 @@ const CHANNEL_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-// Helper functions for birthday (month/day only, no year)
-const parseBirthday = (birthday: string | null | undefined): { month: string; day: string } => {
-  if (!birthday) return { month: "", day: "" };
-  try {
-    const date = new Date(birthday);
-    return {
-      month: String(date.getMonth() + 1).padStart(2, '0'),
-      day: String(date.getDate()).padStart(2, '0')
-    };
-  } catch {
-    return { month: "", day: "" };
-  }
-};
-
-const formatBirthdayForDB = (month: string, day: string): string | null => {
-  if (!month || !day) return null;
-  // Use year 2000 as placeholder (leap year, so Feb 29 works)
-  return `2000-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-};
+import { parseBirthday, formatBirthdayForDB, formatBirthday as formatBirthdayUtil } from "@/lib/utils";
 
 const MONTHS = [
   { value: "01", label: "January" },
@@ -370,14 +352,6 @@ function ContactDetailContent() {
     });
   };
 
-  const formatBirthday = (dateString: string) => {
-    // Format birthday without year for privacy
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-    });
-  };
 
   const getLastContactInfo = () => {
     if (touchpoints.length === 0) {
@@ -593,7 +567,7 @@ function ContactDetailContent() {
                     {contact.relationship}
                     {(contact.city || contact.country) && ` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
                     {!contact.city && !contact.country && contact.location && ` • ${contact.location}`}
-                    {contact.birthday && ` • Birthday: ${formatBirthday(contact.birthday)}`}
+                    {contact.birthday && ` • Birthday: ${formatBirthdayUtil(contact.birthday)}`}
                   </p>
                 </>
               )}

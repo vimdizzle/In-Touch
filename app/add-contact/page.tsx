@@ -34,12 +34,7 @@ const CADENCE_PRESETS = [
   { label: "Yearly", days: 365 },
 ];
 
-// Helper functions for birthday (month/day only, no year)
-const formatBirthdayForDB = (month: string, day: string): string | null => {
-  if (!month || !day) return null;
-  // Use year 2000 as placeholder (leap year, so Feb 29 works)
-  return `2000-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-};
+import { formatBirthdayForDB } from "@/lib/utils";
 
 const MONTHS = [
   { value: "01", label: "January" },

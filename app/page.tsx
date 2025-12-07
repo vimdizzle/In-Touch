@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import cityTimezones from "city-timezones";
+import { getLocalTime } from "@/lib/utils";
 
 interface Contact {
   id: string;
@@ -33,7 +34,6 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [comingUpSort, setComingUpSort] = useState<"next_touch" | "name">("next_touch");
   const [onTrackSort, setOnTrackSort] = useState<"next_touch" | "name">("next_touch");
-  const [openContactMenu, setOpenContactMenu] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,17 +48,6 @@ export default function Home() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  // Close contact menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setOpenContactMenu(null);
-    };
-    if (openContactMenu) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [openContactMenu]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -688,7 +677,8 @@ export default function Home() {
   }, [localTimeCacheRef]);
 
   // Filter contacts by search query
-  const filterContacts = (contactList: Contact[]) => {
+  // Memoized filter function
+  const filterContacts = useCallback((contactList: Contact[]) => {
     if (!searchQuery.trim()) return contactList;
 
     const query = searchQuery.toLowerCase().trim();
@@ -700,13 +690,10 @@ export default function Home() {
       const locationMatch = contact.location?.toLowerCase().includes(query); // backward compatibility
       return nameMatch || relationshipMatch || cityMatch || countryMatch || locationMatch;
     });
-  };
+  }, [searchQuery]);
 
-  const allComingUpContacts = contacts.filter((c) => c.status === "coming_up" || c.status === "overdue");
-  const allOnTrackContacts = contacts.filter((c) => c.status === "on_track");
-  
-  // Sort contacts
-  const sortContacts = (contactList: Contact[], sortMode: "next_touch" | "name"): Contact[] => {
+  // Memoized sort function
+  const sortContacts = useCallback((contactList: Contact[], sortMode: "next_touch" | "name"): Contact[] => {
     const sorted = [...contactList];
     if (sortMode === "name") {
       return sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -730,10 +717,26 @@ export default function Home() {
         return aDays - bDays; // Closest to furthest
       });
     }
-  };
+  }, []);
+
+  // Memoized filtered and sorted contacts
+  const allComingUpContacts = useMemo(() => 
+    contacts.filter((c) => c.status === "coming_up" || c.status === "overdue"),
+    [contacts]
+  );
+  const allOnTrackContacts = useMemo(() => 
+    contacts.filter((c) => c.status === "on_track"),
+    [contacts]
+  );
   
-  const comingUpContacts = sortContacts(filterContacts(allComingUpContacts), comingUpSort);
-  const onTrackContacts = sortContacts(filterContacts(allOnTrackContacts), onTrackSort);
+  const comingUpContacts = useMemo(() => 
+    sortContacts(filterContacts(allComingUpContacts), comingUpSort),
+    [allComingUpContacts, filterContacts, sortContacts, comingUpSort]
+  );
+  const onTrackContacts = useMemo(() => 
+    sortContacts(filterContacts(allOnTrackContacts), onTrackSort),
+    [allOnTrackContacts, filterContacts, sortContacts, onTrackSort]
+  );
 
   if (loading) {
     return (
