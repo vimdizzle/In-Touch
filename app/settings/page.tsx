@@ -13,6 +13,10 @@ interface UserSettings {
   default_cadence_days?: number;
 }
 
+interface UserData extends UserSettings {
+  [key: string]: unknown; // For dynamic fields that might not exist yet
+}
+
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,15 +63,15 @@ export default function SettingsPage() {
         // For now, we'll store settings in the users table
         // In a future version, you might want a separate settings table
         // Handle case where columns might not exist yet (graceful fallback)
-        setDefaultCadenceDays((userData as any).default_cadence_days || 30);
+        setDefaultCadenceDays((userData as UserData).default_cadence_days || 30);
       } else {
         // Create user profile if it doesn't exist
         const { data: newUser } = await supabase.auth.getUser();
         if (newUser.user) {
           // Only insert fields that exist (graceful fallback)
-          const insertData: any = {
+          const insertData: Partial<UserSettings> = {
             id: newUser.user.id,
-            email: newUser.user.email,
+            email: newUser.user.email || undefined,
           };
           
           // Try to include settings fields, but don't fail if they don't exist

@@ -63,6 +63,7 @@ export default function AddContactPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -167,8 +168,9 @@ export default function AddContactPage() {
       setLastTouchpointDate("");
       setRelationship("Friend");
       setCadenceDays(30);
+      setError("");
     } catch (err: any) {
-      alert(`Error adding contact: ${err.message}`);
+      setError(err.message || "Failed to add contact");
     } finally {
       setSaving(false);
     }
@@ -190,8 +192,9 @@ export default function AddContactPage() {
       // Remove from local state
       setContacts(contacts.filter((c) => c.id !== contactId));
       setShowDeleteConfirm(null);
+      setError("");
     } catch (err: any) {
-      alert(`Error deleting contact: ${err.message}`);
+      setError(err.message || "Failed to delete contact");
     } finally {
       setDeleting(false);
     }

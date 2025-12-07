@@ -73,6 +73,7 @@ function ContactDetailContent() {
   const [touchpoints, setTouchpoints] = useState<Touchpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
   const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState("");
@@ -167,8 +168,9 @@ function ContactDetailContent() {
 
       setContact({ ...contact, notes: notes.trim() || undefined });
       setEditingNotes(false);
+      setError("");
     } catch (err: any) {
-      alert(`Error saving notes: ${err.message}`);
+      setError(err.message || "Failed to save notes");
     } finally {
       setSaving(false);
     }
@@ -179,11 +181,12 @@ function ContactDetailContent() {
     
     // Validate cadence days
     if (editCadenceDays < 1) {
-      alert("Cadence must be at least 1 day");
+      setError("Cadence must be at least 1 day");
       return;
     }
 
     setSaving(true);
+    setError("");
     try {
       const birthdayForDB = formatBirthdayForDB(editBirthdayMonth, editBirthdayDay);
       
@@ -211,8 +214,9 @@ function ContactDetailContent() {
       });
       setCadenceDays(editCadenceDays);
       setEditing(false);
+      setError("");
     } catch (err: any) {
-      alert(`Error saving contact: ${err.message}`);
+      setError(err.message || "Failed to save contact");
     } finally {
       setSaving(false);
     }
@@ -246,7 +250,7 @@ function ContactDetailContent() {
       // Redirect to home page after successful deletion
       router.push("/");
     } catch (err: any) {
-      alert(`Error deleting contact: ${err.message}`);
+      setError(err.message || "Failed to delete contact");
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -273,9 +277,11 @@ function ContactDetailContent() {
 
   const handleSaveEditTouchpoint = async () => {
     if (!editingTouchpointId || !editTouchpointChannel || !editTouchpointDate) {
-      alert("Please fill in channel and date");
+      setError("Please fill in channel and date");
       return;
     }
+
+    setError("");
 
     setSaving(true);
     try {
@@ -293,8 +299,9 @@ function ContactDetailContent() {
       // Reload touchpoints
       await loadTouchpoints();
       handleCancelEditTouchpoint();
+      setError("");
     } catch (err: any) {
-      alert(`Error updating touchpoint: ${err.message}`);
+      setError(err.message || "Failed to update touchpoint");
     } finally {
       setSaving(false);
     }
@@ -313,8 +320,9 @@ function ContactDetailContent() {
       // Reload touchpoints
       await loadTouchpoints();
       setShowDeleteTouchpointConfirm(null);
+      setError("");
     } catch (err: any) {
-      alert(`Error deleting touchpoint: ${err.message}`);
+      setError(err.message || "Failed to delete touchpoint");
     } finally {
       setDeletingTouchpointId(null);
     }
@@ -336,8 +344,9 @@ function ContactDetailContent() {
 
       setIsPinned(newPinStatus);
       setContact({ ...contact, is_pinned: newPinStatus });
+      setError("");
     } catch (err: any) {
-      alert(`Error ${newPinStatus ? 'pinning' : 'unpinning'} contact: ${err.message}`);
+      setError(err.message || `Failed to ${newPinStatus ? 'pin' : 'unpin'} contact`);
     } finally {
       setSaving(false);
     }
@@ -574,6 +583,13 @@ function ContactDetailContent() {
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-md text-sm">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}

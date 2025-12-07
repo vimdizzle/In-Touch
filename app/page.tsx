@@ -504,7 +504,7 @@ export default function Home() {
     };
     
     // Helper function to check if a match is in the specified state
-    const isMatchInState = (match: any, stateAbbr: string | null, stateName: string | null): boolean => {
+    const isMatchInState = (match: Record<string, unknown>, stateAbbr: string | null, stateName: string | null): boolean => {
       if (!stateAbbr && !stateName) return false;
       
       // Check multiple possible fields

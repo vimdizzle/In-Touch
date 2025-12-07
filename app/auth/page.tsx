@@ -37,7 +37,7 @@ export default function AuthPage() {
 
         // Check if email confirmation is required
         if (data.user && !data.session) {
-          alert("Please check your email to confirm your account!");
+          setError("Please check your email to confirm your account!");
           return;
         }
       } else {

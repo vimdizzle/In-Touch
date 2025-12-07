@@ -63,6 +63,7 @@ export default function OnboardingPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   // Form state
@@ -157,8 +158,9 @@ export default function OnboardingPage() {
       setLastTouchpointDate("");
       setRelationship("Friend");
       setCadenceDays(30);
+      setError("");
     } catch (err: any) {
-      alert(`Error adding contact: ${err.message}`);
+      setError(err.message || "Failed to add contact");
     } finally {
       setSaving(false);
     }
@@ -194,6 +196,13 @@ export default function OnboardingPage() {
           <div className="bg-[#0b1120] border border-gray-800 rounded-lg p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-4">Add Contact</h3>
             <form onSubmit={handleAddContact} className="space-y-4">
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Name *
