@@ -575,7 +575,7 @@ export default function Home() {
         // If we have state info and multiple matches, filter by state
         if (cityMatches.length > 1 && (stateAbbr || stateName)) {
           const stateMatch = cityMatches.find(match => 
-            isMatchInState(match, stateAbbr, stateName)
+            isMatchInState(match as unknown as Record<string, unknown>, stateAbbr, stateName)
           );
           if (stateMatch) {
             return stateMatch.timezone;
@@ -587,7 +587,7 @@ export default function Home() {
           const caMatch = cityMatches.find(match => 
             match.timezone === "America/Los_Angeles" || 
             match.timezone?.includes("Los_Angeles") ||
-            isMatchInState(match, "CA", "california")
+            isMatchInState(match as unknown as Record<string, unknown>, "CA", "california")
           );
           if (caMatch) {
             return caMatch.timezone;
