@@ -517,19 +517,19 @@ export default function Home() {
       if (stateNameLower && matchStr.includes(stateNameLower)) return true;
       
       // Check specific fields that might exist
-      if (match.province) {
+      if (match.province && typeof match.province === 'string') {
         const provinceUpper = match.province.toUpperCase();
         if (stateAbbr && provinceUpper === stateAbbr) return true;
         if (stateName && match.province.toLowerCase().includes(stateNameLower)) return true;
       }
       
-      if (match.state) {
+      if (match.state && typeof match.state === 'string') {
         const stateUpper = match.state.toUpperCase();
         if (stateAbbr && stateUpper === stateAbbr) return true;
         if (stateName && match.state.toLowerCase().includes(stateNameLower)) return true;
       }
       
-      if (match.iso2 && stateAbbr && match.iso2.toUpperCase() === stateAbbr) return true;
+      if (match.iso2 && typeof match.iso2 === 'string' && stateAbbr && match.iso2.toUpperCase() === stateAbbr) return true;
       
       return false;
     };
@@ -601,17 +601,17 @@ export default function Home() {
     
     // Fallback: try the original location string
     let cityMatches = cityTimezones.lookupViaCity(locationOriginal);
-    if (cityMatches && cityMatches.length > 0) {
-      if (cityMatches.length > 1 && (stateAbbr || stateName)) {
-        const stateMatch = cityMatches.find(match => 
-          isMatchInState(match, stateAbbr, stateName)
-        );
-        if (stateMatch) {
-          return stateMatch.timezone;
+      if (cityMatches && cityMatches.length > 0) {
+        if (cityMatches.length > 1 && (stateAbbr || stateName)) {
+          const stateMatch = cityMatches.find(match => 
+            isMatchInState(match as unknown as Record<string, unknown>, stateAbbr, stateName)
+          );
+          if (stateMatch) {
+            return stateMatch.timezone;
+          }
         }
+        return cityMatches[0].timezone;
       }
-      return cityMatches[0].timezone;
-    }
     
     // Try common abbreviations and aliases
     const abbreviations: { [key: string]: string } = {
