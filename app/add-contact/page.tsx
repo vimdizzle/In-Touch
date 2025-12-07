@@ -160,6 +160,7 @@ export default function AddContactPage() {
       
       // Show success message with contact name
       setSuccessMessage(data.name);
+      setTimeout(() => setSuccessMessage(null), 5000);
       
       // Reset form
       setName("");
