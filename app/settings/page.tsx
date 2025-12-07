@@ -93,12 +93,8 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCancel = async () => {
-    if (!user) return;
-    // Reset form to original values
-    await loadSettings(user.id);
-    setError("");
-    setSuccess(false);
+  const handleCancel = () => {
+    router.push("/");
   };
 
   const handleSave = async (e: React.FormEvent) => {
