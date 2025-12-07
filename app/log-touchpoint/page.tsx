@@ -18,6 +18,7 @@ interface Contact {
   id: string;
   name: string;
   relationship: string;
+  is_pinned?: boolean;
 }
 
 function LogTouchpointForm() {
@@ -51,7 +52,7 @@ function LogTouchpointForm() {
         // Load contact details
         const { data, error } = await supabase
           .from("contacts")
-          .select("id, name, relationship")
+          .select("id, name, relationship, is_pinned")
           .eq("id", contactId)
           .eq("user_id", session.user.id)
           .single();
@@ -87,6 +88,20 @@ function LogTouchpointForm() {
         ]);
 
       if (insertError) throw insertError;
+
+      // If contact is pinned, unpin it after logging touchpoint
+      if (contact.is_pinned) {
+        const { error: unpinError } = await supabase
+          .from("contacts")
+          .update({ is_pinned: false })
+          .eq("id", contact.id)
+          .eq("user_id", user.id);
+
+        if (unpinError) {
+          // Log error but don't fail the touchpoint creation
+          console.error("Error unpinning contact:", unpinError);
+        }
+      }
 
       // Redirect back to home
       router.push("/");
