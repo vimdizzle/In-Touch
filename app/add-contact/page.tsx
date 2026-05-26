@@ -15,6 +15,8 @@ interface Contact {
   location?: string; // kept for backward compatibility
   birthday?: string;
   notes?: string;
+  phone?: string;
+  email?: string;
 }
 
 const RELATIONSHIPS = [
@@ -78,6 +80,8 @@ export default function AddContactPage() {
   const [birthdayMonth, setBirthdayMonth] = useState("");
   const [birthdayDay, setBirthdayDay] = useState("");
   const [notes, setNotes] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [lastTouchpointDate, setLastTouchpointDate] = useState("");
 
   useEffect(() => {
@@ -123,6 +127,8 @@ export default function AddContactPage() {
             country: country.trim() || null,
             birthday: birthdayForDB,
             notes: notes.trim() || null,
+            phone: phone.trim() || null,
+            email: email.trim() || null,
           },
         ])
         .select()
@@ -165,6 +171,8 @@ export default function AddContactPage() {
       setBirthdayMonth("");
       setBirthdayDay("");
       setNotes("");
+      setPhone("");
+      setEmail("");
       setLastTouchpointDate("");
       setRelationship("Friend");
       setCadenceDays(30);
@@ -258,6 +266,33 @@ export default function AddContactPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Phone (optional)
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Email (optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="example@email.com"
+                  />
+                </div>
               </div>
 
               <div>
@@ -448,6 +483,13 @@ export default function AddContactPage() {
                         <p className="text-sm text-gray-400">
                           {contact.relationship}
                         </p>
+                        {(contact.phone || contact.email) && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {contact.phone && `📞 ${contact.phone}`}
+                            {contact.phone && contact.email && " • "}
+                            {contact.email && `✉️ ${contact.email}`}
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 mt-1">
                           Every {contact.cadence_days} days
                         </p>

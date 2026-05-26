@@ -17,6 +17,8 @@ interface Contact {
   notes?: string | null;
   created_at: string;
   is_pinned?: boolean;
+  phone?: string | null;
+  email?: string | null;
 }
 
 interface Touchpoint {
@@ -83,6 +85,8 @@ function ContactDetailContent() {
   const [editCountry, setEditCountry] = useState("");
   const [editBirthdayMonth, setEditBirthdayMonth] = useState("");
   const [editBirthdayDay, setEditBirthdayDay] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editCadenceDays, setEditCadenceDays] = useState(30);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -147,6 +151,8 @@ function ContactDetailContent() {
     const { month, day } = parseBirthday(data.birthday);
     setEditBirthdayMonth(month);
     setEditBirthdayDay(day);
+    setEditPhone(data.phone || "");
+    setEditEmail(data.email || "");
     setEditCadenceDays(data.cadence_days);
     setIsPinned(data.is_pinned || false);
   };
@@ -208,6 +214,8 @@ function ContactDetailContent() {
           country: editCountry.trim() || null,
           birthday: birthdayForDB,
           cadence_days: editCadenceDays,
+          phone: editPhone.trim() || null,
+          email: editEmail.trim() || null,
         })
         .eq("id", contactId)
         .eq("user_id", user.id);
@@ -221,6 +229,8 @@ function ContactDetailContent() {
         country: editCountry.trim() || null,
         birthday: birthdayForDB,
         cadence_days: editCadenceDays,
+        phone: editPhone.trim() || null,
+        email: editEmail.trim() || null,
       });
       setCadenceDays(editCadenceDays);
       setEditing(false);
@@ -241,6 +251,8 @@ function ContactDetailContent() {
     setEditBirthdayMonth(month);
     setEditBirthdayDay(day);
     setEditCadenceDays(contact.cadence_days);
+    setEditPhone(contact.phone || "");
+    setEditEmail(contact.email || "");
     setEditing(false);
   };
 
@@ -493,6 +505,32 @@ function ContactDetailContent() {
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        placeholder="example@email.com"
+                      />
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Birthday (optional)
@@ -592,6 +630,20 @@ function ContactDetailContent() {
                     })()}
                     {contact.birthday && ` • Birthday: ${formatBirthdayUtil(contact.birthday)}`}
                   </p>
+                  {(contact.phone || contact.email) && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-cyan-400">
+                      {contact.phone && (
+                        <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 hover:text-cyan-300 hover:underline">
+                          <span>📞</span> {contact.phone}
+                        </a>
+                      )}
+                      {contact.email && (
+                        <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 hover:text-cyan-300 hover:underline">
+                          <span>✉️</span> {contact.email}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
