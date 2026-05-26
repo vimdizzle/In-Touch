@@ -510,6 +510,10 @@ export default function Home() {
     [allOnTrackContacts, filterContacts, sortContacts, onTrackSort]
   );
 
+  const selectedContact = useMemo(() => {
+    return contacts.find(c => c.id === expandedId) || null;
+  }, [contacts, expandedId]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
@@ -669,7 +673,7 @@ export default function Home() {
                   onClick={() => toggleExpand(contact.id)}
                   className={`bg-[#0b1120] rounded-lg p-6 opacity-90 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
                     isExpanded 
-                      ? "md:col-span-2 lg:col-span-3 border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
+                      ? "border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
                       : hasUpcomingBirthday 
                         ? "border-2 border-yellow-500/60 hover:border-yellow-500/80" 
                         : "border border-gray-800 hover:border-cyan-500/50"
@@ -729,103 +733,6 @@ export default function Home() {
                       Next touch: <span className={getNextTouchInfo(contact).color}>{getNextTouchInfo(contact).text}</span>
                     </p>
                   </div>
-
-                  {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-800/80 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                      {/* Left Column: Basic Info & Notes */}
-                      <div className="space-y-3">
-                        <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Details</h5>
-                        
-                        {/* Location Detail */}
-                        {(contact.city || contact.country || contact.location) && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">📍</span>
-                            <span>
-                              {[contact.city, contact.country].filter(Boolean).join(', ') || contact.location}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Birthday Detail */}
-                        {contact.birthday && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">🎂</span>
-                            <span>
-                              {new Date(contact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Phone Detail */}
-                        {contact.phone && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">📞</span>
-                            <a
-                              href={`tel:${contact.phone}`}
-                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                            >
-                              {contact.phone}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Email Detail */}
-                        {contact.email && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">✉️</span>
-                            <a
-                              href={`mailto:${contact.email}`}
-                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                            >
-                              {contact.email}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Notes Detail */}
-                        {contact.notes && (
-                          <div className="border-t border-gray-800/50 pt-3 mt-3">
-                            <span className="text-xs text-gray-400 block mb-1">Notes</span>
-                            <p className="text-gray-300 italic whitespace-pre-wrap">{contact.notes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right Column: Touchpoints & CTA */}
-                      <div className="space-y-4 flex flex-col justify-between">
-                        <div>
-                          <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Recent Touchpoints</h5>
-                          {contact.touchpoints && contact.touchpoints.length > 0 ? (
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                              {contact.touchpoints.slice(0, 3).map((tp: any) => (
-                                <div key={tp.id} className="text-xs text-gray-400 flex flex-col bg-[#111827]/40 p-2 rounded border border-gray-800/40">
-                                  <div className="flex justify-between items-center text-gray-300">
-                                    <span className="font-medium capitalize">{tp.channel === 'in_person' ? 'In Person' : tp.channel}</span>
-                                    <span className="text-[10px] text-gray-500">
-                                      {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                    </span>
-                                  </div>
-                                  {tp.note && <p className="text-[11px] text-gray-400 italic mt-1">{tp.note}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-gray-500 italic">No touchpoints logged yet</p>
-                          )}
-                        </div>
-
-                        {/* Full Profile CTA */}
-                        <div className="pt-2 border-t border-gray-800/30 text-right">
-                          <button
-                            onClick={() => router.push(`/contacts/${contact.id}`)}
-                            className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1"
-                          >
-                            View Full Profile &rarr;
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="flex gap-2 mt-3">
                     <button
@@ -898,7 +805,7 @@ export default function Home() {
                   onClick={() => toggleExpand(contact.id)}
                   className={`bg-[#0b1120] rounded-lg p-6 opacity-75 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
                     isExpanded 
-                      ? "md:col-span-2 lg:col-span-3 border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
+                      ? "border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
                       : hasUpcomingBirthday 
                         ? "border-2 border-yellow-500/60 hover:border-yellow-500/80" 
                         : "border border-gray-800 hover:border-gray-700"
@@ -959,103 +866,6 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-800/80 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                      {/* Left Column: Basic Info & Notes */}
-                      <div className="space-y-3">
-                        <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Details</h5>
-                        
-                        {/* Location Detail */}
-                        {(contact.city || contact.country || contact.location) && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">📍</span>
-                            <span>
-                              {[contact.city, contact.country].filter(Boolean).join(', ') || contact.location}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Birthday Detail */}
-                        {contact.birthday && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">🎂</span>
-                            <span>
-                              {new Date(contact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Phone Detail */}
-                        {contact.phone && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">📞</span>
-                            <a
-                              href={`tel:${contact.phone}`}
-                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                            >
-                              {contact.phone}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Email Detail */}
-                        {contact.email && (
-                          <div className="text-sm text-gray-300 flex items-center gap-2">
-                            <span className="text-gray-500">✉️</span>
-                            <a
-                              href={`mailto:${contact.email}`}
-                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                            >
-                              {contact.email}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Notes Detail */}
-                        {contact.notes && (
-                          <div className="border-t border-gray-800/50 pt-3 mt-3">
-                            <span className="text-xs text-gray-400 block mb-1">Notes</span>
-                            <p className="text-gray-300 italic whitespace-pre-wrap">{contact.notes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right Column: Touchpoints & CTA */}
-                      <div className="space-y-4 flex flex-col justify-between">
-                        <div>
-                          <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Recent Touchpoints</h5>
-                          {contact.touchpoints && contact.touchpoints.length > 0 ? (
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                              {contact.touchpoints.slice(0, 3).map((tp: any) => (
-                                <div key={tp.id} className="text-xs text-gray-400 flex flex-col bg-[#111827]/40 p-2 rounded border border-gray-800/40">
-                                  <div className="flex justify-between items-center text-gray-300">
-                                    <span className="font-medium capitalize">{tp.channel === 'in_person' ? 'In Person' : tp.channel}</span>
-                                    <span className="text-[10px] text-gray-500">
-                                      {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                    </span>
-                                  </div>
-                                  {tp.note && <p className="text-[11px] text-gray-400 italic mt-1">{tp.note}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-gray-500 italic">No touchpoints logged yet</p>
-                          )}
-                        </div>
-
-                        {/* Full Profile CTA */}
-                        <div className="pt-2 border-t border-gray-800/30 text-right">
-                          <button
-                            onClick={() => router.push(`/contacts/${contact.id}`)}
-                            className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1"
-                          >
-                            View Full Profile &rarr;
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={(e) => {
@@ -1096,86 +906,307 @@ export default function Home() {
           </div>
         )}
 
-        {/* Premium Native Action Sheet / Modal Overlay for Contact Menu */}
+        {/* Slide-Over Drawer / Bottom Sheet for Contact Details */}
+        {selectedContact && (
+          <div 
+            className="fixed inset-0 z-50 flex flex-col md:flex-row justify-end items-end md:items-stretch"
+            onClick={() => setExpandedId(null)}
+          >
+            {/* Backdrop with blur */}
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" />
+
+            {/* Drawer Panel */}
+            <div 
+              className="relative w-full h-[85vh] md:h-screen md:max-w-md lg:max-w-lg bg-[#0b1120] border-t md:border-t-0 md:border-l border-gray-800 rounded-t-3xl md:rounded-t-none md:rounded-l-3xl shadow-2xl flex flex-col animate-slideUp md:animate-slideInRight cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-gray-800/80 flex justify-between items-start gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-xl font-bold text-white leading-tight">
+                      {selectedContact.name}
+                    </h3>
+                    <button
+                      onClick={() => handleTogglePin(selectedContact.id)}
+                      className={`rounded-full p-1 hover:bg-[#111827] transition-colors ${
+                        selectedContact.is_pinned 
+                          ? "text-cyan-400" 
+                          : "text-gray-500"
+                      }`}
+                      title={selectedContact.is_pinned ? "Unpin contact" : "Pin contact"}
+                    >
+                      <svg className="w-5 h-5" fill={selectedContact.is_pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="7" r="3.5" fill={selectedContact.is_pinned ? "currentColor" : "none"}/>
+                        <path d="M12 10.5v11M9 21.5h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    {selectedContact.relationship}
+                    {` • ${formatCadence(selectedContact.cadence_days)}`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setExpandedId(null)}
+                  className="p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-gray-800/80 transition-colors"
+                  title="Close panel"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Status Bar */}
+                <div className="bg-[#111827]/40 border border-gray-800/60 rounded-xl p-4 flex justify-between items-center text-sm">
+                  <div>
+                    <span className="text-gray-400 text-xs block mb-0.5">Last touchpoint</span>
+                    <span className="font-medium text-gray-200">{formatLastContact(selectedContact)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-gray-400 text-xs block mb-0.5">Next touch due</span>
+                    <span className={`font-semibold ${getNextTouchInfo(selectedContact).color}`}>
+                      {getNextTouchInfo(selectedContact).text}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Section */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Contact Info</h4>
+                  
+                  <div className="space-y-3">
+                    {/* Location */}
+                    {(selectedContact.city || selectedContact.country || selectedContact.location) && (
+                      <div className="flex items-center gap-3 p-3 bg-[#111827]/20 border border-gray-800/40 rounded-xl">
+                        <span className="text-xl">📍</span>
+                        <div className="text-sm">
+                          <span className="text-gray-500 text-xs block">Location</span>
+                          <span className="text-gray-200">
+                            {[selectedContact.city, selectedContact.country].filter(Boolean).join(', ') || selectedContact.location}
+                            {(() => {
+                              const localTime = getLocalTime(selectedContact.city, selectedContact.country, selectedContact.location);
+                              return localTime ? ` (${localTime} local time)` : '';
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Birthday */}
+                    {selectedContact.birthday && (
+                      <div className="flex items-center gap-3 p-3 bg-[#111827]/20 border border-gray-800/40 rounded-xl">
+                        <span className="text-xl">🎂</span>
+                        <div className="text-sm">
+                          <span className="text-gray-500 text-xs block">Birthday</span>
+                          <span className="text-gray-200">
+                            {new Date(selectedContact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Phone */}
+                    {selectedContact.phone && (
+                      <div className="flex items-center justify-between p-3 bg-[#111827]/20 border border-gray-800/40 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">📞</span>
+                          <div className="text-sm">
+                            <span className="text-gray-500 text-xs block">Phone</span>
+                            <a href={`tel:${selectedContact.phone}`} className="text-cyan-400 hover:underline font-medium">
+                              {selectedContact.phone}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Email */}
+                    {selectedContact.email && (
+                      <div className="flex items-center justify-between p-3 bg-[#111827]/20 border border-gray-800/40 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">✉️</span>
+                          <div className="text-sm">
+                            <span className="text-gray-500 text-xs block">Email</span>
+                            <a href={`mailto:${selectedContact.email}`} className="text-cyan-400 hover:underline font-medium">
+                              {selectedContact.email}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes Block */}
+                {selectedContact.notes && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Personal Notes</h4>
+                    <div className="bg-[#111827]/30 border border-gray-800/50 rounded-xl p-4 text-sm text-gray-300 italic whitespace-pre-wrap leading-relaxed">
+                      {selectedContact.notes}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Touchpoints Block */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Touchpoint History</h4>
+                  {selectedContact.touchpoints && selectedContact.touchpoints.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedContact.touchpoints.slice(0, 5).map((tp: any) => (
+                        <div key={tp.id} className="text-sm flex flex-col bg-[#111827]/40 p-3.5 rounded-xl border border-gray-800/50">
+                          <div className="flex justify-between items-center text-gray-300 mb-1">
+                            <span className="font-semibold capitalize text-xs bg-gray-800 px-2 py-0.5 rounded text-gray-400">
+                              {tp.channel === 'in_person' ? 'In Person' : tp.channel}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </span>
+                          </div>
+                          {tp.note && <p className="text-xs text-gray-400 italic mt-1.5 leading-relaxed border-l-2 border-cyan-500/30 pl-2">{tp.note}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 border border-dashed border-gray-800 rounded-xl">
+                      <p className="text-sm text-gray-500 italic">No touchpoints logged yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Actions Footer */}
+              <div className="p-6 border-t border-gray-800/80 bg-[#070b14]/50 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => router.push(`/contacts/${selectedContact.id}`)}
+                  className="text-sm text-cyan-400 hover:text-cyan-300 font-medium hover:underline flex items-center gap-1"
+                >
+                  View Full Profile &rarr;
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveContactMenu(selectedContact)}
+                    className="py-2 px-4 text-sm text-gray-300 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition-colors"
+                  >
+                    Contact
+                  </button>
+                  <button
+                    onClick={() => router.push(`/log-touchpoint?contactId=${selectedContact.id}`)}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    Log Touch
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Premium Redesigned Contact Menu Modal */}
         {activeContactMenu && (
           <div 
-            className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn cursor-default"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn cursor-default"
             onClick={() => setActiveContactMenu(null)}
           >
             <div 
-              className="bg-[#0b1120] border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-6 animate-scaleUp shadow-2xl"
+              className="bg-[#2f3224] border border-[#4a4e39] rounded-3xl max-w-sm w-full overflow-hidden animate-scaleUp shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="text-center space-y-1">
-                <h3 className="text-xl font-bold text-white">{activeContactMenu.name}</h3>
-                <p className="text-xs text-gray-400 uppercase tracking-widest">{activeContactMenu.relationship}</p>
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4 border-b border-[#4a4e39]/60">
+                <h3 className="text-xl font-bold text-[#f1f2eb]">{activeContactMenu.name}</h3>
+                <p className="text-xs text-[#c3c6ad] uppercase tracking-widest mt-0.5">{activeContactMenu.relationship}</p>
               </div>
 
-              <div className="space-y-3">
+              {/* Actions List */}
+              <div className="divide-y divide-[#4a4e39]/60">
                 {activeContactMenu.phone ? (
                   <>
-                    {/* Call Button */}
+                    {/* Call Row */}
                     <a
                       href={`tel:${activeContactMenu.phone}`}
                       onClick={() => setActiveContactMenu(null)}
-                      className="w-full flex items-center p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group justify-center gap-3"
+                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#383b2a]/60 transition-colors group"
                     >
-                      <span className="text-xl group-hover:scale-110 transition-transform">📞</span>
-                      <span>Phone</span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-[#c3c6ad] uppercase tracking-wider">phone</span>
+                          <span className="bg-[#4a4e39] text-[#f1f2eb] text-[9px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">recent</span>
+                        </div>
+                        <div className="text-base font-semibold text-white mt-1 group-hover:text-cyan-300 transition-colors">
+                          {activeContactMenu.phone}
+                        </div>
+                      </div>
+                      <div className="text-[#c3c6ad] group-hover:text-white transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.302a12.01 12.01 0 01-5.907-5.907c-.44-.44-.274-.927.102-1.21l1.293-.97a1.125 1.125 0 00.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                        </svg>
+                      </div>
                     </a>
 
-                    {/* Text Button */}
+                    {/* Text Row */}
                     <a
                       href={`sms:${activeContactMenu.phone}`}
                       onClick={() => setActiveContactMenu(null)}
-                      className="w-full flex items-center p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group justify-center gap-3"
+                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#383b2a]/60 transition-colors group"
                     >
-                      <span className="text-xl group-hover:scale-110 transition-transform">💬</span>
-                      <span>Text Message</span>
+                      <div className="text-left">
+                        <span className="text-[10px] font-bold text-[#c3c6ad] uppercase tracking-wider block">text message</span>
+                        <div className="text-base font-semibold text-white mt-1 group-hover:text-cyan-300 transition-colors">
+                          {activeContactMenu.phone}
+                        </div>
+                      </div>
+                      <div className="text-[#c3c6ad] group-hover:text-white transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501c1.153-.086 2.294-.21 3.423-.379 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                        </svg>
+                      </div>
                     </a>
                   </>
                 ) : (
-                  <div className="p-3 bg-gray-900/40 border border-gray-800/80 rounded-xl text-center">
-                    <p className="text-xs text-gray-500">No primary phone number stored.</p>
+                  <div className="px-6 py-4 text-center">
+                    <p className="text-xs text-[#c3c6ad] italic">No phone number configured.</p>
                   </div>
                 )}
 
                 {activeContactMenu.email ? (
-                  /* Email Button */
+                  /* Email Row */
                   <a
                     href={`mailto:${activeContactMenu.email}`}
                     onClick={() => setActiveContactMenu(null)}
-                    className="w-full flex items-center p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group justify-center gap-3"
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#383b2a]/60 transition-colors group"
                   >
-                    <span className="text-xl group-hover:scale-110 transition-transform">✉️</span>
-                    <span>Email</span>
+                    <div className="text-left">
+                      <span className="text-[10px] font-bold text-[#c3c6ad] uppercase tracking-wider block">email</span>
+                      <div className="text-base font-semibold text-white mt-1 group-hover:text-cyan-300 transition-colors break-all pr-2">
+                        {activeContactMenu.email}
+                      </div>
+                    </div>
+                    <div className="text-[#c3c6ad] group-hover:text-white transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                      </svg>
+                    </div>
                   </a>
                 ) : (
-                  <div className="p-3 bg-gray-900/40 border border-gray-800/80 rounded-xl text-center">
-                    <p className="text-xs text-gray-500">No primary email stored.</p>
+                  <div className="px-6 py-4 text-center">
+                    <p className="text-xs text-[#c3c6ad] italic">No email configured.</p>
                   </div>
-                )}
-
-                {/* Add/Edit Info CTA if any is missing */}
-                {(!activeContactMenu.phone || !activeContactMenu.email) && (
-                  <button
-                    onClick={() => {
-                      router.push(`/contacts/${activeContactMenu.id}`);
-                      setActiveContactMenu(null);
-                    }}
-                    className="w-full text-center py-2 text-xs text-cyan-400/80 hover:text-cyan-300 hover:underline pt-2 block"
-                  >
-                    Configure Phone & Email on profile &rarr;
-                  </button>
                 )}
               </div>
 
-              <button
-                onClick={() => setActiveContactMenu(null)}
-                className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
-              >
-                Close
-              </button>
+              {/* Close Button Panel */}
+              <div className="p-6 bg-[#25281d] border-t border-[#4a4e39]/60">
+                <button
+                  onClick={() => setActiveContactMenu(null)}
+                  className="w-full py-3 bg-[#4a4e39] hover:bg-[#555a3f] text-[#f1f2eb] font-semibold rounded-2xl transition-colors text-sm"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
