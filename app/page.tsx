@@ -37,14 +37,12 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [comingUpSort, setComingUpSort] = useState<"next_touch" | "name">("next_touch");
   const [onTrackSort, setOnTrackSort] = useState<"next_touch" | "name">("next_touch");
-  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeContactMenu, setActiveContactMenu] = useState<Contact | null>(null);
   const router = useRouter();
 
   const toggleExpand = (id: string) => {
-    setExpandedIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    setExpandedId(prev => prev === id ? null : id);
   };
 
   // A state hook to trigger re-renders every 30 seconds to update local clocks live
@@ -657,21 +655,21 @@ export default function Home() {
               </button>
             </div>
             {comingUpContacts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
               {comingUpContacts.map((contact) => {
                 const birthdayInfo = getBirthdayInfo(contact.birthday);
                 const hasUpcomingBirthday = birthdayInfo !== null;
                 const isPinned = contact.is_pinned === true;
                 
-                const isExpanded = expandedIds.includes(contact.id);
+                const isExpanded = expandedId === contact.id;
                 
                 return (
                 <div
                   key={contact.id}
                   onClick={() => toggleExpand(contact.id)}
-                  className={`bg-[#0b1120] rounded-lg p-4 opacity-90 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
+                  className={`bg-[#0b1120] rounded-lg p-6 opacity-90 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
                     isExpanded 
-                      ? "border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
+                      ? "md:col-span-2 lg:col-span-3 border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
                       : hasUpcomingBirthday 
                         ? "border-2 border-yellow-500/60 hover:border-yellow-500/80" 
                         : "border border-gray-800 hover:border-cyan-500/50"
@@ -733,93 +731,98 @@ export default function Home() {
                   </div>
 
                   {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-800/80 space-y-3 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                      {/* Location Detail */}
-                      {(contact.city || contact.country || contact.location) && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">📍</span>
-                          <span>
-                            {[contact.city, contact.country].filter(Boolean).join(', ') || contact.location}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Birthday Detail */}
-                      {contact.birthday && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">🎂</span>
-                          <span>
-                            {new Date(contact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Phone Detail */}
-                      {contact.phone && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">📞</span>
-                          <a
-                            href={`tel:${contact.phone}`}
-                            className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                          >
-                            {contact.phone}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Email Detail */}
-                      {contact.email && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">✉️</span>
-                          <a
-                            href={`mailto:${contact.email}`}
-                            className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                          >
-                            {contact.email}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Notes Detail */}
-                      {contact.notes && (
-                        <div className="text-sm text-gray-300 border-t border-gray-800/50 pt-2 mt-2">
-                          <span className="text-xs text-gray-400 block mb-1">Notes:</span>
-                          <p className="text-gray-300 italic whitespace-pre-wrap">{contact.notes}</p>
-                        </div>
-                      )}
-
-                      {/* Recent Touchpoints List */}
-                      {contact.touchpoints && contact.touchpoints.length > 0 ? (
-                        <div className="border-t border-gray-800/50 pt-2 mt-2">
-                          <span className="text-xs text-gray-400 block mb-2">Recent Touchpoints:</span>
-                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                            {contact.touchpoints.slice(0, 3).map((tp: any) => (
-                              <div key={tp.id} className="text-xs text-gray-400 flex flex-col bg-[#111827]/40 p-1.5 rounded border border-gray-800/40">
-                                <div className="flex justify-between items-center text-gray-300">
-                                  <span className="font-medium capitalize">{tp.channel === 'in_person' ? 'In Person' : tp.channel}</span>
-                                  <span className="text-[10px] text-gray-500">
-                                    {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                  </span>
-                                </div>
-                                {tp.note && <p className="text-[11px] text-gray-400 italic mt-0.5">{tp.note}</p>}
-                              </div>
-                            ))}
+                    <div className="mt-4 pt-4 border-t border-gray-800/80 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+                      {/* Left Column: Basic Info & Notes */}
+                      <div className="space-y-3">
+                        <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Details</h5>
+                        
+                        {/* Location Detail */}
+                        {(contact.city || contact.country || contact.location) && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">📍</span>
+                            <span>
+                              {[contact.city, contact.country].filter(Boolean).join(', ') || contact.location}
+                            </span>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="border-t border-gray-800/50 pt-2 mt-2">
-                          <span className="text-xs text-gray-500 italic block">No touchpoints logged yet</span>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Full Profile CTA */}
-                      <div className="pt-2 text-right">
-                        <button
-                          onClick={() => router.push(`/contacts/${contact.id}`)}
-                          className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1"
-                        >
-                          View Full Profile &rarr;
-                        </button>
+                        {/* Birthday Detail */}
+                        {contact.birthday && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">🎂</span>
+                            <span>
+                              {new Date(contact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Phone Detail */}
+                        {contact.phone && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">📞</span>
+                            <a
+                              href={`tel:${contact.phone}`}
+                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
+                            >
+                              {contact.phone}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Email Detail */}
+                        {contact.email && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">✉️</span>
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
+                            >
+                              {contact.email}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Notes Detail */}
+                        {contact.notes && (
+                          <div className="border-t border-gray-800/50 pt-3 mt-3">
+                            <span className="text-xs text-gray-400 block mb-1">Notes</span>
+                            <p className="text-gray-300 italic whitespace-pre-wrap">{contact.notes}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right Column: Touchpoints & CTA */}
+                      <div className="space-y-4 flex flex-col justify-between">
+                        <div>
+                          <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Recent Touchpoints</h5>
+                          {contact.touchpoints && contact.touchpoints.length > 0 ? (
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                              {contact.touchpoints.slice(0, 3).map((tp: any) => (
+                                <div key={tp.id} className="text-xs text-gray-400 flex flex-col bg-[#111827]/40 p-2 rounded border border-gray-800/40">
+                                  <div className="flex justify-between items-center text-gray-300">
+                                    <span className="font-medium capitalize">{tp.channel === 'in_person' ? 'In Person' : tp.channel}</span>
+                                    <span className="text-[10px] text-gray-500">
+                                      {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                    </span>
+                                  </div>
+                                  {tp.note && <p className="text-[11px] text-gray-400 italic mt-1">{tp.note}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500 italic">No touchpoints logged yet</p>
+                          )}
+                        </div>
+
+                        {/* Full Profile CTA */}
+                        <div className="pt-2 border-t border-gray-800/30 text-right">
+                          <button
+                            onClick={() => router.push(`/contacts/${contact.id}`)}
+                            className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1"
+                          >
+                            View Full Profile &rarr;
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -881,21 +884,21 @@ export default function Home() {
                 )}
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
               {onTrackContacts.map((contact) => {
                 const birthdayInfo = getBirthdayInfo(contact.birthday);
                 const hasUpcomingBirthday = birthdayInfo !== null;
                 const isPinned = contact.is_pinned === true;
                 
-                const isExpanded = expandedIds.includes(contact.id);
+                const isExpanded = expandedId === contact.id;
                 
                 return (
                 <div
                   key={contact.id}
                   onClick={() => toggleExpand(contact.id)}
-                  className={`bg-[#0b1120] rounded-lg p-4 opacity-75 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
+                  className={`bg-[#0b1120] rounded-lg p-6 opacity-75 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
                     isExpanded 
-                      ? "border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
+                      ? "md:col-span-2 lg:col-span-3 border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
                       : hasUpcomingBirthday 
                         ? "border-2 border-yellow-500/60 hover:border-yellow-500/80" 
                         : "border border-gray-800 hover:border-gray-700"
@@ -957,93 +960,98 @@ export default function Home() {
                   </div>
 
                   {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-800/80 space-y-3 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                      {/* Location Detail */}
-                      {(contact.city || contact.country || contact.location) && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">📍</span>
-                          <span>
-                            {[contact.city, contact.country].filter(Boolean).join(', ') || contact.location}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Birthday Detail */}
-                      {contact.birthday && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">🎂</span>
-                          <span>
-                            {new Date(contact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Phone Detail */}
-                      {contact.phone && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">📞</span>
-                          <a
-                            href={`tel:${contact.phone}`}
-                            className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                          >
-                            {contact.phone}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Email Detail */}
-                      {contact.email && (
-                        <div className="text-sm text-gray-300 flex items-center gap-2">
-                          <span className="text-gray-500">✉️</span>
-                          <a
-                            href={`mailto:${contact.email}`}
-                            className="text-cyan-400 hover:text-cyan-300 hover:underline"
-                          >
-                            {contact.email}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Notes Detail */}
-                      {contact.notes && (
-                        <div className="text-sm text-gray-300 border-t border-gray-800/50 pt-2 mt-2">
-                          <span className="text-xs text-gray-400 block mb-1">Notes:</span>
-                          <p className="text-gray-300 italic whitespace-pre-wrap">{contact.notes}</p>
-                        </div>
-                      )}
-
-                      {/* Recent Touchpoints List */}
-                      {contact.touchpoints && contact.touchpoints.length > 0 ? (
-                        <div className="border-t border-gray-800/50 pt-2 mt-2">
-                          <span className="text-xs text-gray-400 block mb-2">Recent Touchpoints:</span>
-                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                            {contact.touchpoints.slice(0, 3).map((tp: any) => (
-                              <div key={tp.id} className="text-xs text-gray-400 flex flex-col bg-[#111827]/40 p-1.5 rounded border border-gray-800/40">
-                                <div className="flex justify-between items-center text-gray-300">
-                                  <span className="font-medium capitalize">{tp.channel === 'in_person' ? 'In Person' : tp.channel}</span>
-                                  <span className="text-[10px] text-gray-500">
-                                    {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                  </span>
-                                </div>
-                                {tp.note && <p className="text-[11px] text-gray-400 italic mt-0.5">{tp.note}</p>}
-                              </div>
-                            ))}
+                    <div className="mt-4 pt-4 border-t border-gray-800/80 grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+                      {/* Left Column: Basic Info & Notes */}
+                      <div className="space-y-3">
+                        <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Details</h5>
+                        
+                        {/* Location Detail */}
+                        {(contact.city || contact.country || contact.location) && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">📍</span>
+                            <span>
+                              {[contact.city, contact.country].filter(Boolean).join(', ') || contact.location}
+                            </span>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="border-t border-gray-800/50 pt-2 mt-2">
-                          <span className="text-xs text-gray-500 italic block">No touchpoints logged yet</span>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Full Profile CTA */}
-                      <div className="pt-2 text-right">
-                        <button
-                          onClick={() => router.push(`/contacts/${contact.id}`)}
-                          className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1"
-                        >
-                          View Full Profile &rarr;
-                        </button>
+                        {/* Birthday Detail */}
+                        {contact.birthday && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">🎂</span>
+                            <span>
+                              {new Date(contact.birthday).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Phone Detail */}
+                        {contact.phone && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">📞</span>
+                            <a
+                              href={`tel:${contact.phone}`}
+                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
+                            >
+                              {contact.phone}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Email Detail */}
+                        {contact.email && (
+                          <div className="text-sm text-gray-300 flex items-center gap-2">
+                            <span className="text-gray-500">✉️</span>
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="text-cyan-400 hover:text-cyan-300 hover:underline"
+                            >
+                              {contact.email}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Notes Detail */}
+                        {contact.notes && (
+                          <div className="border-t border-gray-800/50 pt-3 mt-3">
+                            <span className="text-xs text-gray-400 block mb-1">Notes</span>
+                            <p className="text-gray-300 italic whitespace-pre-wrap">{contact.notes}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right Column: Touchpoints & CTA */}
+                      <div className="space-y-4 flex flex-col justify-between">
+                        <div>
+                          <h5 className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">Recent Touchpoints</h5>
+                          {contact.touchpoints && contact.touchpoints.length > 0 ? (
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                              {contact.touchpoints.slice(0, 3).map((tp: any) => (
+                                <div key={tp.id} className="text-xs text-gray-400 flex flex-col bg-[#111827]/40 p-2 rounded border border-gray-800/40">
+                                  <div className="flex justify-between items-center text-gray-300">
+                                    <span className="font-medium capitalize">{tp.channel === 'in_person' ? 'In Person' : tp.channel}</span>
+                                    <span className="text-[10px] text-gray-500">
+                                      {new Date(tp.contact_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                    </span>
+                                  </div>
+                                  {tp.note && <p className="text-[11px] text-gray-400 italic mt-1">{tp.note}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500 italic">No touchpoints logged yet</p>
+                          )}
+                        </div>
+
+                        {/* Full Profile CTA */}
+                        <div className="pt-2 border-t border-gray-800/30 text-right">
+                          <button
+                            onClick={() => router.push(`/contacts/${contact.id}`)}
+                            className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline inline-flex items-center gap-1"
+                          >
+                            View Full Profile &rarr;
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1099,7 +1107,7 @@ export default function Home() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center space-y-1">
-                <h3 className="text-xl font-bold text-white">Contact {activeContactMenu.name}</h3>
+                <h3 className="text-xl font-bold text-white">{activeContactMenu.name}</h3>
                 <p className="text-xs text-gray-400 uppercase tracking-widest">{activeContactMenu.relationship}</p>
               </div>
 
@@ -1110,26 +1118,20 @@ export default function Home() {
                     <a
                       href={`tel:${activeContactMenu.phone}`}
                       onClick={() => setActiveContactMenu(null)}
-                      className="w-full flex items-center justify-between p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group"
+                      className="w-full flex items-center p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group justify-center gap-3"
                     >
-                      <span className="flex items-center gap-3">
-                        <span className="text-xl group-hover:scale-110 transition-transform">📞</span>
-                        <span>Call Phone</span>
-                      </span>
-                      <span className="text-xs text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/30">Native</span>
+                      <span className="text-xl group-hover:scale-110 transition-transform">📞</span>
+                      <span>Phone</span>
                     </a>
 
                     {/* Text Button */}
                     <a
                       href={`sms:${activeContactMenu.phone}`}
                       onClick={() => setActiveContactMenu(null)}
-                      className="w-full flex items-center justify-between p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group"
+                      className="w-full flex items-center p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group justify-center gap-3"
                     >
-                      <span className="flex items-center gap-3">
-                        <span className="text-xl group-hover:scale-110 transition-transform">💬</span>
-                        <span>Send Text Message</span>
-                      </span>
-                      <span className="text-xs text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/30">Native</span>
+                      <span className="text-xl group-hover:scale-110 transition-transform">💬</span>
+                      <span>Text Message</span>
                     </a>
                   </>
                 ) : (
@@ -1143,13 +1145,10 @@ export default function Home() {
                   <a
                     href={`mailto:${activeContactMenu.email}`}
                     onClick={() => setActiveContactMenu(null)}
-                    className="w-full flex items-center justify-between p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group"
+                    className="w-full flex items-center p-3.5 bg-[#111827] hover:bg-[#1f2937] border border-gray-800 rounded-xl text-white font-medium transition-colors group justify-center gap-3"
                   >
-                    <span className="flex items-center gap-3">
-                      <span className="text-xl group-hover:scale-110 transition-transform">✉️</span>
-                      <span>Send Email</span>
-                    </span>
-                    <span className="text-xs text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/30">Native</span>
+                    <span className="text-xl group-hover:scale-110 transition-transform">✉️</span>
+                    <span>Email</span>
                   </a>
                 ) : (
                   <div className="p-3 bg-gray-900/40 border border-gray-800/80 rounded-xl text-center">
@@ -1175,7 +1174,7 @@ export default function Home() {
                 onClick={() => setActiveContactMenu(null)}
                 className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
               >
-                Close Menu
+                Close
               </button>
             </div>
           </div>
