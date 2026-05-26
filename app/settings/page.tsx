@@ -108,7 +108,7 @@ export default function SettingsPage() {
     try {
       // Update user profile
       // Only update fields that exist in the database
-      const updateData: any = {
+      const updateData: Record<string, string | null> = {
         name: name.trim() || null,
       };
       
@@ -136,7 +136,7 @@ export default function SettingsPage() {
             throw updateError;
           }
         }
-      } catch (err: any) {
+      } catch {
         // Fallback: just update name if other fields fail
         const { error: nameOnlyError } = await supabase
           .from("users")
@@ -148,8 +148,8 @@ export default function SettingsPage() {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to save settings");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -193,8 +193,8 @@ export default function SettingsPage() {
       // Step 4: Sign out and redirect to auth page
       await supabase.auth.signOut();
       router.push("/auth");
-    } catch (err: any) {
-      setError(err.message || "Failed to delete account. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete account. Please try again.");
       setDeleting(false);
       setShowDeleteConfirm(false);
     }

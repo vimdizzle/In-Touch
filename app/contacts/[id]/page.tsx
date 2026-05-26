@@ -43,7 +43,7 @@ const CHANNEL_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-import { parseBirthday, formatBirthdayForDB, formatBirthday as formatBirthdayUtil } from "@/lib/utils";
+import { parseBirthday, formatBirthdayForDB, formatBirthday as formatBirthdayUtil, getLocalTime } from "@/lib/utils";
 
 const MONTHS = [
   { value: "01", label: "January" },
@@ -97,6 +97,16 @@ function ContactDetailContent() {
   const router = useRouter();
   const params = useParams();
   const contactId = params.id as string;
+
+  // A state hook to trigger re-renders every 30 seconds to update local clocks live
+  const [timeTick, setTimeTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeTick((tick) => tick + 1);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -169,8 +179,8 @@ function ContactDetailContent() {
       setContact({ ...contact, notes: notes.trim() || undefined });
       setEditingNotes(false);
       setError("");
-    } catch (err: any) {
-      setError(err.message || "Failed to save notes");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save notes");
     } finally {
       setSaving(false);
     }
@@ -215,8 +225,8 @@ function ContactDetailContent() {
       setCadenceDays(editCadenceDays);
       setEditing(false);
       setError("");
-    } catch (err: any) {
-      setError(err.message || "Failed to save contact");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save contact");
     } finally {
       setSaving(false);
     }
@@ -249,8 +259,8 @@ function ContactDetailContent() {
 
       // Redirect to home page after successful deletion
       router.push("/");
-    } catch (err: any) {
-      setError(err.message || "Failed to delete contact");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete contact");
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -300,8 +310,8 @@ function ContactDetailContent() {
       await loadTouchpoints();
       handleCancelEditTouchpoint();
       setError("");
-    } catch (err: any) {
-      setError(err.message || "Failed to update touchpoint");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update touchpoint");
     } finally {
       setSaving(false);
     }
@@ -321,8 +331,8 @@ function ContactDetailContent() {
       await loadTouchpoints();
       setShowDeleteTouchpointConfirm(null);
       setError("");
-    } catch (err: any) {
-      setError(err.message || "Failed to delete touchpoint");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete touchpoint");
     } finally {
       setDeletingTouchpointId(null);
     }
@@ -345,8 +355,8 @@ function ContactDetailContent() {
       setIsPinned(newPinStatus);
       setContact({ ...contact, is_pinned: newPinStatus });
       setError("");
-    } catch (err: any) {
-      setError(err.message || `Failed to ${newPinStatus ? 'pin' : 'unpin'} contact`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to ${newPinStatus ? 'pin' : 'unpin'} contact`);
     } finally {
       setSaving(false);
     }
@@ -576,6 +586,10 @@ function ContactDetailContent() {
                     {contact.relationship}
                     {(contact.city || contact.country) && ` • ${[contact.city, contact.country].filter(Boolean).join(', ')}`}
                     {!contact.city && !contact.country && contact.location && ` • ${contact.location}`}
+                    {(() => {
+                      const localTime = getLocalTime(contact.city, contact.country, contact.location);
+                      return localTime ? ` (${localTime})` : '';
+                    })()}
                     {contact.birthday && ` • Birthday: ${formatBirthdayUtil(contact.birthday)}`}
                   </p>
                 </>

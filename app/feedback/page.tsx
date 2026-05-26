@@ -81,8 +81,8 @@ export default function FeedbackPage() {
       setTimeout(() => {
         router.push("/");
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || "Failed to submit feedback. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit feedback. Please try again.");
     } finally {
       setSubmitting(false);
     }

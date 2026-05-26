@@ -4,8 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import cityTimezones from "city-timezones";
-import { getLocalTime } from "@/lib/utils";
+import { getLocalTime as getLocalTimeUtil } from "@/lib/utils";
 
 interface Contact {
   id: string;
@@ -35,6 +34,16 @@ export default function Home() {
   const [comingUpSort, setComingUpSort] = useState<"next_touch" | "name">("next_touch");
   const [onTrackSort, setOnTrackSort] = useState<"next_touch" | "name">("next_touch");
   const router = useRouter();
+
+  // A state hook to trigger re-renders every 30 seconds to update local clocks live
+  const [timeTick, setTimeTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeTick((tick) => tick + 1);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -405,233 +414,6 @@ export default function Home() {
     return null;
   };
 
-  // Map locations to timezones using city-timezones library
-  const getTimezoneFromCityCountry = (city?: string | null, country?: string | null): string | null => {
-    if (!city && !country) return null;
-    
-    // If we have both city and country, use them for precise lookup
-    if (city && country) {
-      const cityMatches = cityTimezones.lookupViaCity(city);
-      if (cityMatches && cityMatches.length > 0) {
-        // Filter by country if multiple matches
-        if (cityMatches.length > 1) {
-          const countryMatch = cityMatches.find(match => {
-            const matchStr = JSON.stringify(match).toLowerCase();
-            return matchStr.includes(country.toLowerCase());
-          });
-          if (countryMatch) {
-            return countryMatch.timezone;
-          }
-        }
-        return cityMatches[0].timezone;
-      }
-    }
-    
-    // Fallback to city only
-    if (city) {
-      const cityMatches = cityTimezones.lookupViaCity(city);
-      if (cityMatches && cityMatches.length > 0) {
-        return cityMatches[0].timezone;
-      }
-    }
-    
-    return null;
-  };
-
-  // Legacy function for backward compatibility with location field
-  const getTimezoneFromLocation = (location?: string | null): string | null => {
-    if (!location) return null;
-    
-    const locationLower = location.toLowerCase().trim();
-    const locationOriginal = location.trim();
-    
-    // US state abbreviations mapping (full names and abbreviations)
-    const stateAbbreviations: { [key: string]: string } = {
-      "california": "CA",
-      "ca": "CA",
-      "new york": "NY",
-      "ny": "NY",
-      "texas": "TX",
-      "tx": "TX",
-      "florida": "FL",
-      "fl": "FL",
-      "illinois": "IL",
-      "il": "IL",
-      "pennsylvania": "PA",
-      "pa": "PA",
-      "ohio": "OH",
-      "oh": "OH",
-      "georgia": "GA",
-      "ga": "GA",
-      "north carolina": "NC",
-      "nc": "NC",
-      "michigan": "MI",
-      "mi": "MI",
-    };
-    
-    // Helper function to extract state from location
-    const extractState = (loc: string): { stateAbbr: string | null; stateName: string | null } => {
-      const locLower = loc.toLowerCase();
-      let stateAbbr: string | null = null;
-      let stateName: string | null = null;
-      
-      if (loc.includes(',')) {
-        const parts = loc.split(',');
-        const statePart = parts[parts.length - 1].trim().toLowerCase();
-        stateAbbr = stateAbbreviations[statePart] || statePart.toUpperCase();
-        stateName = statePart;
-      } else {
-        const words = locLower.split(/\s+/);
-        const lastWord = words[words.length - 1];
-        if (stateAbbreviations[lastWord]) {
-          stateAbbr = stateAbbreviations[lastWord];
-          stateName = lastWord;
-        } else if (lastWord.length === 2) {
-          stateAbbr = lastWord.toUpperCase();
-        } else {
-          // Check if it's a full state name
-          for (const [key, abbr] of Object.entries(stateAbbreviations)) {
-            if (locLower.includes(key) && key.length > 2) {
-              stateAbbr = abbr;
-              stateName = key;
-              break;
-            }
-          }
-        }
-      }
-      
-      return { stateAbbr, stateName };
-    };
-    
-    // Helper function to check if a match is in the specified state
-    const isMatchInState = (match: Record<string, unknown>, stateAbbr: string | null, stateName: string | null): boolean => {
-      if (!stateAbbr && !stateName) return false;
-      
-      // Check multiple possible fields
-      const matchStr = JSON.stringify(match).toLowerCase();
-      const stateAbbrLower = stateAbbr?.toLowerCase() || '';
-      const stateNameLower = stateName?.toLowerCase() || '';
-      
-      // Check if any field contains the state abbreviation or name
-      if (stateAbbrLower && matchStr.includes(stateAbbrLower)) return true;
-      if (stateNameLower && matchStr.includes(stateNameLower)) return true;
-      
-      // Check specific fields that might exist
-      if (match.province && typeof match.province === 'string') {
-        const provinceUpper = match.province.toUpperCase();
-        if (stateAbbr && provinceUpper === stateAbbr) return true;
-        if (stateName && match.province.toLowerCase().includes(stateNameLower)) return true;
-      }
-      
-      if (match.state && typeof match.state === 'string') {
-        const stateUpper = match.state.toUpperCase();
-        if (stateAbbr && stateUpper === stateAbbr) return true;
-        if (stateName && match.state.toLowerCase().includes(stateNameLower)) return true;
-      }
-      
-      if (match.iso2 && typeof match.iso2 === 'string' && stateAbbr && match.iso2.toUpperCase() === stateAbbr) return true;
-      
-      return false;
-    };
-    
-    // Extract city name from location
-    let cityName: string | null = null;
-    
-    if (locationOriginal.includes(',')) {
-      // Format: "City, State"
-      cityName = locationOriginal.split(',')[0].trim();
-    } else {
-      // Format: "City State" - extract city name
-      const words = locationOriginal.split(/\s+/);
-      if (words.length >= 2) {
-        const lastWord = words[words.length - 1].toLowerCase();
-        // Check if last word is a state
-        if (stateAbbreviations[lastWord] || lastWord.length === 2) {
-          cityName = words.slice(0, -1).join(' ');
-        } else {
-          // Check if location contains a state name
-          const { stateName: extractedStateName } = extractState(locationOriginal);
-          if (extractedStateName && locationLower.includes(extractedStateName)) {
-            // Remove state name from location to get city
-            cityName = locationOriginal.replace(new RegExp(extractedStateName, 'i'), '').trim();
-          } else {
-            // Try first two words as city name
-            cityName = words.slice(0, 2).join(' ');
-          }
-        }
-      } else {
-        cityName = locationOriginal;
-      }
-    }
-    
-    // Extract state information
-    const { stateAbbr, stateName } = extractState(locationOriginal);
-    
-    // Try to find matches using the extracted city name
-    if (cityName) {
-      let cityMatches = cityTimezones.lookupViaCity(cityName);
-      
-      if (cityMatches && cityMatches.length > 0) {
-        // If we have state info and multiple matches, filter by state
-        if (cityMatches.length > 1 && (stateAbbr || stateName)) {
-          const stateMatch = cityMatches.find(match => 
-            isMatchInState(match as unknown as Record<string, unknown>, stateAbbr, stateName)
-          );
-          if (stateMatch) {
-            return stateMatch.timezone;
-          }
-        }
-        
-        // For US cities, prioritize Pacific timezone for California
-        if (stateAbbr === "CA" || stateName === "california") {
-          const caMatch = cityMatches.find(match => 
-            match.timezone === "America/Los_Angeles" || 
-            match.timezone?.includes("Los_Angeles") ||
-            isMatchInState(match as unknown as Record<string, unknown>, "CA", "california")
-          );
-          if (caMatch) {
-            return caMatch.timezone;
-          }
-        }
-        
-        // Return first match if no state filtering worked
-        return cityMatches[0].timezone;
-      }
-    }
-    
-    // Fallback: try the original location string
-    let cityMatches = cityTimezones.lookupViaCity(locationOriginal);
-      if (cityMatches && cityMatches.length > 0) {
-        if (cityMatches.length > 1 && (stateAbbr || stateName)) {
-          const stateMatch = cityMatches.find(match => 
-            isMatchInState(match as unknown as Record<string, unknown>, stateAbbr, stateName)
-          );
-          if (stateMatch) {
-            return stateMatch.timezone;
-          }
-        }
-        return cityMatches[0].timezone;
-      }
-    
-    // Try common abbreviations and aliases
-    const abbreviations: { [key: string]: string } = {
-      "ny": "New York",
-      "nyc": "New York",
-      "la": "Los Angeles",
-      "sf": "San Francisco",
-      "dc": "Washington",
-    };
-    
-    if (abbreviations[locationLower]) {
-      const cityMatches3 = cityTimezones.lookupViaCity(abbreviations[locationLower]);
-      if (cityMatches3 && cityMatches3.length > 0) {
-        return cityMatches3[0].timezone;
-      }
-    }
-    
-    return null;
-  };
-
   // Cache for local time calculations (persists across renders)
   const localTimeCacheRef = useMemo(() => new Map<string, string | null>(), []);
 
@@ -644,36 +426,9 @@ export default function Home() {
       return localTimeCacheRef.get(cacheKey) || null;
     }
 
-    // Prefer city + country over location
-    let timezone: string | null = null;
-    if (city || country) {
-      timezone = getTimezoneFromCityCountry(city, country);
-    }
-    // Fallback to location for backward compatibility
-    if (!timezone && location) {
-      timezone = getTimezoneFromLocation(location);
-    }
-    
-    if (!timezone) {
-      localTimeCacheRef.set(cacheKey, null);
-      return null;
-    }
-
-    try {
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: timezone,
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-      const result = formatter.format(now);
-      localTimeCacheRef.set(cacheKey, result);
-      return result;
-    } catch (error) {
-      localTimeCacheRef.set(cacheKey, null);
-      return null;
-    }
+    const time = getLocalTimeUtil(city, country, location);
+    localTimeCacheRef.set(cacheKey, time);
+    return time;
   }, [localTimeCacheRef]);
 
   // Filter contacts by search query
