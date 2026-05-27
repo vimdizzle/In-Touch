@@ -73,6 +73,7 @@ function ContactDetailContent() {
   const [user, setUser] = useState<User | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
   const [touchpoints, setTouchpoints] = useState<Touchpoint[]>([]);
+  const [visibleCount, setVisibleCount] = useState(3);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -125,6 +126,13 @@ function ContactDetailContent() {
         loadContact(session.user.id),
         loadTouchpoints()
       ]);
+
+      // If edit query param is present, open edit mode immediately
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("edit") === "true") {
+        setEditing(true);
+      }
+
       setLoading(false);
     });
   }, [contactId, router]);
@@ -634,12 +642,18 @@ function ContactDetailContent() {
                     <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-cyan-400">
                       {contact.phone && (
                         <a href={`tel:${contact.phone}`} className="flex items-center gap-1.5 hover:text-cyan-300 hover:underline">
-                          <span>📞</span> {contact.phone}
+                          <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.302a12.01 12.01 0 01-5.907-5.907c-.44-.44-.274-.927.102-1.21l1.293-.97a1.125 1.125 0 00.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                          </svg>
+                          <span>{contact.phone}</span>
                         </a>
                       )}
                       {contact.email && (
                         <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 hover:text-cyan-300 hover:underline">
-                          <span>✉️</span> {contact.email}
+                          <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                          </svg>
+                          <span>{contact.email}</span>
                         </a>
                       )}
                     </div>
@@ -767,7 +781,7 @@ function ContactDetailContent() {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {touchpoints.map((touchpoint) => (
+                  {touchpoints.slice(0, visibleCount).map((touchpoint) => (
                     <div
                       key={touchpoint.id}
                       className="border-b border-gray-800 pb-4 last:border-0 last:pb-0"
@@ -870,6 +884,16 @@ function ContactDetailContent() {
                       )}
                     </div>
                   ))}
+                  {touchpoints.length > visibleCount && (
+                    <div className="text-center pt-2">
+                      <button
+                        onClick={() => setVisibleCount((prev) => prev + 10)}
+                        className="text-sm text-cyan-400 hover:text-cyan-300 font-medium transition-colors hover:underline"
+                      >
+                        Load More &darr;
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
