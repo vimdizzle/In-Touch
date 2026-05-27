@@ -553,7 +553,7 @@ export default function Home() {
                     }, 0);
                   }
                 }}
-                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
                 title="Search"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -563,7 +563,7 @@ export default function Home() {
               {/* Add Contact button - Chrome-style + icon */}
               <button
                 onClick={() => router.push("/add-contact")}
-                className="w-10 h-10 flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white rounded-md transition-colors"
+                className="w-10 h-10 flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white rounded-full hover:bg-cyan-600 transition-all duration-200"
                 title="Add Contact"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -573,7 +573,7 @@ export default function Home() {
               {/* Settings icon button */}
               <button
                 onClick={() => router.push("/settings")}
-                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
                 title="Settings"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -584,7 +584,7 @@ export default function Home() {
               {/* Sign Out icon button */}
               <button
                 onClick={handleSignOut}
-                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
                 title="Sign Out"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -644,7 +644,7 @@ export default function Home() {
               </h3>
               <button
                 onClick={() => setComingUpSort(comingUpSort === "next_touch" ? "name" : "next_touch")}
-                className="p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
                 title={comingUpSort === "next_touch" ? "Sort by: Next Touch" : "Sort by: Name (A-Z)"}
               >
                 {comingUpSort === "next_touch" ? (
@@ -785,7 +785,7 @@ export default function Home() {
               </h3>
               <button
                 onClick={() => setOnTrackSort(onTrackSort === "next_touch" ? "name" : "next_touch")}
-                className="p-2 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
                 title={onTrackSort === "next_touch" ? "Sort by: Next Touch" : "Sort by: Name (A-Z)"}
               >
                 {onTrackSort === "next_touch" ? (
@@ -945,10 +945,10 @@ export default function Home() {
                     </h3>
                     <button
                       onClick={() => handleTogglePin(selectedContact.id)}
-                      className={`rounded-full p-1 hover:bg-[#111827] transition-colors ${
+                      className={`w-10 h-10 flex items-center justify-center border rounded-full transition-all duration-200 ${
                         selectedContact.is_pinned 
-                          ? "text-cyan-400" 
-                          : "text-gray-500"
+                          ? "border-cyan-500/50 text-cyan-400 hover:border-cyan-500 hover:bg-cyan-500/10" 
+                          : "border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-400 hover:bg-[#111827]"
                       }`}
                       title={selectedContact.is_pinned ? "Unpin contact" : "Pin contact"}
                     >
@@ -965,7 +965,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => setExpandedId(null)}
-                  className="p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-gray-800/80 transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
                   title="Close panel"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -1233,21 +1233,27 @@ export default function Home() {
               </div>
 
               {/* Close & Edit Profile Button Panel */}
-              <div className="p-6 bg-[#070b14]/50 border-t border-gray-800/80 flex items-center justify-between gap-3">
+              <div className="p-6 bg-[#070b14]/50 border-t border-gray-800/80 flex items-center justify-center gap-4 w-full">
                 <button
                   onClick={() => {
                     router.push(`/contacts/${activeContactMenu.id}?edit=true`);
                     setActiveContactMenu(null);
                   }}
-                  className="py-2.5 px-4 border border-cyan-500/50 hover:border-cyan-500 text-cyan-400 hover:text-cyan-300 rounded-xl text-sm font-semibold transition-colors text-center flex-1"
+                  className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/50 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200"
+                  title="Edit Contact"
                 >
-                  Edit
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => setActiveContactMenu(null)}
-                  className="py-2.5 px-4 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors text-sm flex-1 text-center"
+                  className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-gray-800/80 transition-all duration-200"
+                  title="Close"
                 >
-                  Close
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>

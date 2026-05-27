@@ -138,9 +138,12 @@ function LogTouchpointForm() {
         <div className="mb-8">
           <button
             onClick={handleCancel}
-            className="text-gray-400 hover:text-white mb-4 flex items-center gap-2"
+            className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 mb-4"
+            title="Back"
           >
-            ← Back
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
           </button>
           <h1 className="text-sm uppercase tracking-widest text-gray-400 mb-2">
             LOG TOUCHPOINT
@@ -211,20 +214,33 @@ function LogTouchpointForm() {
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-4 justify-center">
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 px-4 py-3 text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
+              className="w-12 h-12 flex items-center justify-center text-red-500 hover:text-white border border-red-500/50 rounded-full hover:border-red-500 hover:bg-red-500/10 transition-all duration-200 disabled:opacity-50"
+              title="Cancel"
             >
-              Cancel
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white py-3 px-4 rounded-md disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium"
+              className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/50 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 disabled:opacity-50"
+              title="Log Touchpoint"
             >
-              {saving ? "Saving..." : "Log"}
+              {saving ? (
+                <svg className="animate-spin h-5 w-5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
             </button>
           </div>
         </form>
