@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { formatBirthdayForDB, parseBirthday } from "@/lib/utils";
+import { formatBirthdayForDB, parseBirthday, parseVCard, mapDeviceContact } from "@/lib/utils";
 
 interface Contact {
   id?: string;
@@ -18,6 +18,19 @@ interface Contact {
   notes?: string;
   phone?: string;
   email?: string;
+}
+
+interface ImportingContactDraft {
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  country?: string;
+  birthday?: string; // MM-DD
+  notes?: string;
+  relationship: string;
+  cadence_days: number;
+  selected: boolean;
 }
 
 const RELATIONSHIPS = [
@@ -81,6 +94,18 @@ export default function OnboardingPage() {
   const [lastTouchpointDate, setLastTouchpointDate] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Automated Importing states
+  const [isContactPickerSupported, setIsContactPickerSupported] = useState(false);
+  const [importingContacts, setImportingContacts] = useState<ImportingContactDraft[]>([]);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [guideTab, setGuideTab] = useState<"google" | "android" | "ios">("google");
+  const [bulkRelationship, setBulkRelationship] = useState("Friend");
+  const [bulkCadenceDays, setBulkCadenceDays] = useState(30);
+  const [importStatus, setImportStatus] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
@@ -103,6 +128,177 @@ export default function OnboardingPage() {
       }
     });
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "contacts" in navigator && "select" in (navigator as any).contacts) {
+      setIsContactPickerSupported(true);
+    }
+  }, []);
+
+  // Native Mobile Device Contact Picker API
+  const handleDeviceContactPicker = async () => {
+    try {
+      setError("");
+      setImportStatus(null);
+      
+      const props = ["name", "email", "tel", "address"];
+      const opts = { multiple: true };
+      
+      // Call modern device Contact Picker API
+      const pickedContacts = await (navigator as any).contacts.select(props, opts);
+      
+      if (pickedContacts && pickedContacts.length > 0) {
+        const mapped = pickedContacts.map((c: any) => ({
+          ...mapDeviceContact(c),
+          selected: true,
+        }));
+        
+        setImportingContacts(mapped);
+        setIsReviewModalOpen(true);
+      }
+    } catch (err: any) {
+      // User cancelled or picker failed
+      if (err.name !== "AbortError") {
+        console.error("Device Contact Picker Error:", err);
+        setImportStatus({
+          type: "error",
+          message: err.message || "Failed to access device contacts.",
+        });
+      }
+    }
+  };
+
+  // vCard (.vcf) File Parser
+  const handleVcfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setImportStatus(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = parseVCard(text);
+        
+        if (parsed.length === 0) {
+          setImportStatus({
+            type: "warning",
+            message: "No valid contacts found in the .vcf file.",
+          });
+          return;
+        }
+
+        const drafts = parsed.map((c) => ({
+          ...c,
+          selected: true,
+        }));
+
+        setImportingContacts(drafts);
+        setIsReviewModalOpen(true);
+      } catch (err: any) {
+        console.error("vCard parsing error:", err);
+        setImportStatus({
+          type: "error",
+          message: "Failed to parse .vcf file. Make sure it is in valid vCard format.",
+        });
+      }
+    };
+    reader.readAsText(file);
+    // Clear input so same file can be uploaded again
+    e.target.value = "";
+  };
+
+  // Bulk set relationship for selected contacts in review
+  const applyBulkRelationship = (val: string) => {
+    setBulkRelationship(val);
+    setImportingContacts(
+      importingContacts.map((c) => (c.selected ? { ...c, relationship: val } : c))
+    );
+  };
+
+  // Bulk set cadence for selected contacts in review
+  const applyBulkCadence = (val: number) => {
+    setBulkCadenceDays(val);
+    setImportingContacts(
+      importingContacts.map((c) => (c.selected ? { ...c, cadence_days: val } : c))
+    );
+  };
+
+  // Checkbox toggle in review
+  const toggleImportContactSelect = (index: number) => {
+    setImportingContacts(
+      importingContacts.map((c, i) => (i === index ? { ...c, selected: !c.selected } : c))
+    );
+  };
+
+  // Check/uncheck all in review
+  const toggleAllImportContacts = (selected: boolean) => {
+    setImportingContacts(
+      importingContacts.map((c) => ({ ...c, selected }))
+    );
+  };
+
+  // Edit contact field in review list
+  const handleImportContactFieldChange = (index: number, field: string, value: any) => {
+    setImportingContacts(
+      importingContacts.map((c, i) => (i === index ? { ...c, [field]: value } : c))
+    );
+  };
+
+  // Bulk save imported contacts to Supabase
+  const handleConfirmImport = async () => {
+    const selected = importingContacts.filter((c) => c.selected);
+    if (selected.length === 0) return;
+
+    setBulkSaving(true);
+    setError("");
+    
+    try {
+      const inserts = selected.map((c) => {
+        let birthdayForDB = null;
+        if (c.birthday) {
+          const parts = c.birthday.split("-");
+          birthdayForDB = formatBirthdayForDB(parts[0], parts[1]);
+        }
+
+        return {
+          user_id: user?.id,
+          name: c.name.trim(),
+          relationship: c.relationship,
+          cadence_days: c.cadence_days,
+          city: c.city?.trim() || null,
+          country: c.country?.trim() || null,
+          birthday: birthdayForDB,
+          phone: c.phone?.trim() || null,
+          email: c.email?.trim() || null,
+          notes: c.notes?.trim() || null,
+        };
+      });
+
+      const { data, error: insertError } = await supabase
+        .from("contacts")
+        .insert(inserts)
+        .select();
+
+      if (insertError) throw insertError;
+
+      if (data) {
+        setContacts((prev) => [...data, ...prev]);
+        setImportStatus({
+          type: "success",
+          message: `Successfully imported ${data.length} contact${data.length !== 1 ? "s" : ""}!`,
+        });
+      }
+      setIsReviewModalOpen(false);
+    } catch (err: any) {
+      console.error("Bulk Import Error:", err);
+      setError(err.message || "Failed to import contacts");
+    } finally {
+      setBulkSaving(false);
+    }
+  };
 
   const handleAddContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,6 +478,74 @@ export default function OnboardingPage() {
                 <p className="text-[11px] text-slate-400 mb-5">
                   Add the people in your circle. Form fields match the Add Contact dashboard modal exactly.
                 </p>
+
+                {/* Automate Import Action Bar */}
+                <div className="bg-[#111827]/40 border border-slate-800/80 rounded-2xl p-4 mb-6 space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Automate Import</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Import from your device contacts or upload a .vcf file.</p>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {isContactPickerSupported && (
+                        <button
+                          type="button"
+                          onClick={handleDeviceContactPicker}
+                          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500 text-cyan-400 hover:text-white rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                          </svg>
+                          Device
+                        </button>
+                      )}
+
+                      <label className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-500 text-indigo-400 hover:text-white rounded-lg text-xs font-bold cursor-pointer transition-all duration-200">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        Upload .vcf
+                        <input
+                          type="file"
+                          accept=".vcf"
+                          onChange={handleVcfUpload}
+                          className="hidden"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsGuideModalOpen(true)}
+                        className="flex items-center justify-center p-2 bg-[#111827] border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
+                        title="VCF Export Instructions Guide"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {importStatus && (
+                    <div className={`p-2.5 rounded-lg text-[10px] font-semibold flex justify-between items-center animate-fadeIn ${
+                      importStatus.type === "success"
+                        ? "bg-emerald-950/30 border border-emerald-800/80 text-emerald-400"
+                        : importStatus.type === "error"
+                        ? "bg-red-950/30 border border-red-800/80 text-red-400"
+                        : "bg-amber-950/30 border border-amber-800/80 text-amber-400"
+                    }`}>
+                      <span>{importStatus.message}</span>
+                      <button
+                        type="button"
+                        onClick={() => setImportStatus(null)}
+                        className="text-gray-400 hover:text-white font-bold text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
+
 
                 <form onSubmit={handleAddContact} className="space-y-4">
                   {error && (
@@ -681,6 +945,389 @@ export default function OnboardingPage() {
           </div>
         )}
       </main>
+
+      {/* EXPORT INSTRUCTIONS GUIDE MODAL */}
+      {isGuideModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setIsGuideModalOpen(false)}
+        >
+          <div
+            className="bg-[#0b1120] border border-gray-800 rounded-3xl max-w-lg w-full overflow-hidden animate-scaleUp shadow-2xl flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-800/80 flex justify-between items-center shrink-0">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+                Export Contacts Guide
+              </h3>
+              <button
+                onClick={() => setIsGuideModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white border border-gray-800 rounded-full hover:bg-[#111827] cursor-pointer"
+                title="Close Guide"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex p-3 bg-[#0d1527] border-b border-gray-850/60 shrink-0">
+              <div className="flex bg-[#111827] p-1 rounded-xl w-full">
+                <button
+                  onClick={() => setGuideTab("google")}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    guideTab === "google"
+                      ? "bg-gradient-to-r from-cyan-500 to-indigo-500 text-white shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Google
+                </button>
+                <button
+                  onClick={() => setGuideTab("android")}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    guideTab === "android"
+                      ? "bg-gradient-to-r from-cyan-500 to-indigo-500 text-white shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  Android
+                </button>
+                <button
+                  onClick={() => setGuideTab("ios")}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    guideTab === "ios"
+                      ? "bg-gradient-to-r from-cyan-500 to-indigo-500 text-white shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  iPhone (iOS)
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {guideTab === "google" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Follow these simple steps to export your Google Contacts as a <strong>.vcf (vCard)</strong> file on your computer or mobile browser:
+                  </p>
+                  <ol className="space-y-3.5 text-xs text-gray-300">
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">1</span>
+                      <span>Navigate to <a href="https://contacts.google.com" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline font-semibold">Google Contacts</a>.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">2</span>
+                      <span>Hover over the contacts you want to export and select them via their checkboxes, or to select all, click the checkbox at the top-left menu.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">3</span>
+                      <span>Click the <strong className="text-white">Export</strong> button in the left sidebar or the top options action bar.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">4</span>
+                      <span>In the pop-up, choose the <strong className="text-white">vCard (for iOS Contacts)</strong> format. Do NOT choose Google CSV.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">5</span>
+                      <span>Click <strong className="text-white">Export</strong> and save the file to upload it here.</span>
+                    </li>
+                  </ol>
+                </div>
+              )}
+
+              {guideTab === "android" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Follow these steps to export contacts from your Android device directly as a <strong>.vcf</strong> file:
+                  </p>
+                  <ol className="space-y-3.5 text-xs text-gray-300">
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">1</span>
+                      <span>Open the default <strong className="text-white">Contacts</strong> app on your Android device.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">2</span>
+                      <span>Tap on the <strong className="text-white">Fix & manage</strong> or <strong className="text-white">Organize / Settings</strong> tab at the bottom or top menu.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">3</span>
+                      <span>Select the <strong className="text-white">Export to file</strong> option.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">4</span>
+                      <span>Choose the account(s) you wish to export, tap <strong className="text-white">Export to .vcf</strong>, and select a folder to save it.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">5</span>
+                      <span>Transfer that `.vcf` file to your computer or upload it directly from your phone's browser.</span>
+                    </li>
+                  </ol>
+                </div>
+              )}
+
+              {guideTab === "ios" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Follow these steps on your iPhone or iCloud to export your Apple Contacts as a <strong>vCard (.vcf)</strong> file:
+                  </p>
+                  <ol className="space-y-3.5 text-xs text-gray-300">
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">1</span>
+                      <span>Open the native <strong className="text-white">Contacts</strong> app on your iPhone.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">2</span>
+                      <span>Tap <strong className="text-white">Lists</strong> in the top-left corner.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">3</span>
+                      <span>Press and hold on <strong className="text-white">All Contacts</strong> (or any list you'd like to import) until the context menu pops up.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">4</span>
+                      <span>Tap <strong className="text-white">Export</strong>, and choose <strong className="text-white">Save to Files</strong> (or email/AirDrop it to your desktop).</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-[10px] shrink-0 font-sans">5</span>
+                      <span>Select the file when uploading on this page.</span>
+                    </li>
+                  </ol>
+                  <div className="pt-2 border-t border-gray-800 text-[10px] text-gray-400">
+                    💡 <strong>Alternate iCloud web method</strong>: Log in to <a href="https://icloud.com" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">iCloud.com</a>, open Contacts, click the gear settings icon on the bottom left, and choose <strong>Export vCard...</strong>.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT REVIEW AND CUSTOMIZATION MODAL */}
+      {isReviewModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setIsReviewModalOpen(false)}
+        >
+          <div
+            className="bg-[#0b1120] border border-gray-800 rounded-3xl max-w-2xl w-full overflow-hidden animate-scaleUp shadow-2xl flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-800/80 flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-white">Review Imported Contacts</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5 font-sans">
+                  Select the contacts you want to add, update details, or set bulk options.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsReviewModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white border border-gray-800 rounded-full hover:bg-[#111827] cursor-pointer shrink-0"
+                title="Cancel Import"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Bulk Edit Panel */}
+            <div className="p-4 bg-[#0d1527] border-b border-gray-850/80 shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Bulk Relationship
+                </label>
+                <select
+                  value={bulkRelationship}
+                  onChange={(e) => applyBulkRelationship(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-[#111827] border border-gray-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  {RELATIONSHIPS.map((rel) => (
+                    <option key={rel} value={rel}>
+                      {rel}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Bulk Cadence
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    { label: "Weekly", days: 7 },
+                    { label: "Monthly", days: 30 },
+                    { label: "Quarterly", days: 90 },
+                    { label: "Yearly", days: 365 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.days}
+                      type="button"
+                      onClick={() => applyBulkCadence(preset.days)}
+                      className={`flex-1 py-1 px-1.5 text-[10px] font-bold rounded border transition-colors cursor-pointer text-center ${
+                        bulkCadenceDays === preset.days
+                          ? "bg-cyan-500 border-cyan-500 text-white"
+                          : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Select All / Status Header */}
+            <div className="px-6 py-2 bg-[#090d1a] border-b border-gray-850/80 shrink-0 flex justify-between items-center text-[10px] font-semibold text-gray-400">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={importingContacts.length > 0 && importingContacts.every((c) => c.selected)}
+                  onChange={(e) => toggleAllImportContacts(e.target.checked)}
+                  className="rounded bg-[#111827] border-gray-700 text-cyan-500 focus:ring-cyan-500 h-3.5 w-3.5 cursor-pointer"
+                  id="selectAllImport"
+                />
+                <label htmlFor="selectAllImport" className="cursor-pointer select-none">
+                  Select All ({importingContacts.length})
+                </label>
+              </div>
+              <span>
+                {importingContacts.filter((c) => c.selected).length} selected
+              </span>
+            </div>
+
+            {/* Scrollable List of Parsed Contacts */}
+            <div className="flex-1 overflow-y-auto p-4 pr-3 custom-scrollbar divide-y divide-gray-850/40">
+              {importingContacts.map((contact, idx) => (
+                <div key={idx} className="py-3 flex items-start gap-3.5">
+                  {/* Selection Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={contact.selected}
+                    onChange={() => toggleImportContactSelect(idx)}
+                    className="mt-1.5 rounded bg-[#111827] border-gray-700 text-cyan-500 focus:ring-cyan-500 h-4 w-4 cursor-pointer shrink-0"
+                  />
+
+                  {/* Contact details */}
+                  <div className="flex-1 space-y-2 min-w-0">
+                    {/* Name input */}
+                    <div>
+                      <input
+                        type="text"
+                        value={contact.name}
+                        onChange={(e) => handleImportContactFieldChange(idx, "name", e.target.value)}
+                        className="w-full px-2 py-1 bg-[#111827] border border-gray-700 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-cyan-500 font-sans"
+                        placeholder="Contact Name"
+                      />
+                    </div>
+
+                    {/* Display of parsed metadata */}
+                    <div className="flex flex-wrap gap-1.5 font-sans">
+                      {contact.phone && (
+                        <span className="text-[9px] text-gray-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1">
+                          📞 {contact.phone}
+                        </span>
+                      )}
+                      {contact.email && (
+                        <span className="text-[9px] text-gray-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1 truncate max-w-[180px]">
+                          ✉️ {contact.email}
+                        </span>
+                      )}
+                      {(contact.city || contact.country) && (
+                        <span className="text-[9px] text-cyan-400/90 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1">
+                          📍 {[contact.city, contact.country].filter(Boolean).join(", ")}
+                        </span>
+                      )}
+                      {contact.birthday && (
+                        <span className="text-[9px] text-indigo-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded flex items-center gap-1">
+                          🎂 {contact.birthday}
+                        </span>
+                      )}
+                      {contact.notes && (
+                        <span className="text-[9px] text-amber-400/80 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded truncate max-w-[180px]" title={contact.notes}>
+                          📝 {contact.notes}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Single relationship and cadence picker inside the row */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-slate-500 font-semibold uppercase">Type:</span>
+                        <select
+                          value={contact.relationship}
+                          onChange={(e) => handleImportContactFieldChange(idx, "relationship", e.target.value)}
+                          className="bg-[#111827] border border-gray-700 text-white text-[10px] rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer"
+                        >
+                          {RELATIONSHIPS.map((rel) => (
+                            <option key={rel} value={rel}>
+                              {rel}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-slate-500 font-semibold uppercase">Cadence:</span>
+                        <select
+                          value={contact.cadence_days}
+                          onChange={(e) => handleImportContactFieldChange(idx, "cadence_days", parseInt(e.target.value))}
+                          className="bg-[#111827] border border-gray-700 text-white text-[10px] rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer"
+                        >
+                          <option value={7}>Weekly (7d)</option>
+                          <option value={30}>Monthly (30d)</option>
+                          <option value={90}>Quarterly (90d)</option>
+                          <option value={365}>Yearly (365d)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-6 py-4 border-t border-gray-800/80 bg-[#0d1527] shrink-0 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="px-4 py-2 border border-gray-700 hover:border-gray-500 hover:bg-[#111827] text-gray-300 hover:text-white rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmImport}
+                disabled={bulkSaving || importingContacts.filter((c) => c.selected).length === 0}
+                className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-lg text-xs font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+              >
+                {bulkSaving ? (
+                  <>
+                    <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    Confirm Import ({importingContacts.filter((c) => c.selected).length})
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

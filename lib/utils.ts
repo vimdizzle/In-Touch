@@ -168,3 +168,136 @@ export const getLocalTime = (city?: string | null, country?: string | null, loca
   }
 };
 
+/**
+ * Client-side vCard (.vcf) file parser.
+ * Supports multiple VCARD entries, FN/N (Name), TEL (Phone), EMAIL (Email),
+ * ADR (Address - City/Country), BDAY (Birthday), and NOTE (Notes).
+ */
+export const parseVCard = (vcardText: string): Array<{
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  country?: string;
+  birthday?: string;
+  notes?: string;
+  relationship: string;
+  cadence_days: number;
+}> => {
+  const contacts: any[] = [];
+  const lines = vcardText.split(/\r?\n/);
+  let current: any = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (!line) continue;
+
+    // Handle line folding (lines starting with space or tab are continuations of previous line)
+    while (i + 1 < lines.length && (lines[i + 1].startsWith(" ") || lines[i + 1].startsWith("\t"))) {
+      line += lines[i + 1].substring(1);
+      i++;
+    }
+
+    if (line.toUpperCase() === "BEGIN:VCARD") {
+      current = {
+        name: "",
+        relationship: "Friend",
+        cadence_days: 30,
+      };
+    } else if (line.toUpperCase() === "END:VCARD") {
+      if (current && current.name) {
+        contacts.push(current);
+      }
+      current = null;
+    } else if (current) {
+      const colonIdx = line.indexOf(":");
+      if (colonIdx === -1) continue;
+
+      const keyPart = line.substring(0, colonIdx);
+      const value = line.substring(colonIdx + 1).trim();
+      const key = keyPart.split(";")[0].toUpperCase();
+
+      if (key === "FN") {
+        current.name = value.replace(/\\,/g, ",").replace(/\\;/g, ";").trim();
+      } else if (key === "N" && !current.name) {
+        const parts = value.split(";");
+        const family = parts[0] || "";
+        const given = parts[1] || "";
+        const full = [given, family].filter(Boolean).join(" ").trim();
+        if (full) {
+          current.name = full.replace(/\\,/g, ",").replace(/\\;/g, ";");
+        }
+      } else if (key === "TEL") {
+        // Clean value: strip common chars like spaces/dashes for standardizing
+        const cleanPhone = value.replace(/\\,/g, ",").trim();
+        if (!current.phone) {
+          current.phone = cleanPhone;
+        }
+      } else if (key === "EMAIL") {
+        const cleanEmail = value.replace(/\\,/g, ",").trim();
+        if (!current.email) {
+          current.email = cleanEmail;
+        }
+      } else if (key === "BDAY") {
+        // Formats: YYYY-MM-DD, YYYYMMDD, --MMDD, MMDD
+        const cleanBday = value.replace(/[-]/g, "");
+        if (cleanBday.length === 8) {
+          const month = cleanBday.substring(4, 6);
+          const day = cleanBday.substring(6, 8);
+          current.birthday = `${month}-${day}`;
+        } else if (cleanBday.length === 4) {
+          const month = cleanBday.substring(0, 2);
+          const day = cleanBday.substring(2, 4);
+          current.birthday = `${month}-${day}`;
+        }
+      } else if (key === "NOTE") {
+        current.notes = value.replace(/\\n/g, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").trim();
+      } else if (key === "ADR") {
+        // ADR structure: POBox;Extended;Street;Locality(City);Region;PostalCode;Country
+        const parts = value.split(";");
+        const city = (parts[3] || "").trim();
+        const country = (parts[6] || "").trim();
+        if (city) current.city = city.replace(/\\,/g, ",").replace(/\\;/g, ";");
+        if (country) current.country = country.replace(/\\,/g, ",").replace(/\\;/g, ";");
+      }
+    }
+  }
+
+  return contacts;
+};
+
+/**
+ * Maps W3C Device Contact Picker result to In Touch internal Contact structure.
+ */
+export const mapDeviceContact = (deviceContact: any): {
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  country?: string;
+  relationship: string;
+  cadence_days: number;
+} => {
+  const name = deviceContact.name?.[0] || "";
+  const phone = deviceContact.tel?.[0] || "";
+  const email = deviceContact.email?.[0] || "";
+
+  let city = "";
+  let country = "";
+  if (deviceContact.address && deviceContact.address.length > 0) {
+    city = deviceContact.address[0].city || "";
+    country = deviceContact.address[0].country || "";
+  }
+
+  return {
+    name,
+    phone: phone || undefined,
+    email: email || undefined,
+    city: city || undefined,
+    country: country || undefined,
+    relationship: "Friend",
+    cadence_days: 30,
+  };
+};
+
+
