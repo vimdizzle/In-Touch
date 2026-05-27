@@ -742,7 +742,7 @@ export default function Home() {
                       }}
                       className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
-                      Contact
+                      Reach Out
                     </button>
                     <button
                       onClick={(e) => {
@@ -874,7 +874,7 @@ export default function Home() {
                       }}
                       className="flex-[1_1_0%] box-border py-2 px-3 text-sm text-gray-400 hover:text-white border border-gray-700 rounded-md hover:border-gray-600 transition-colors"
                     >
-                      Contact
+                      Reach Out
                     </button>
                     <button
                       onClick={(e) => {
@@ -1082,22 +1082,22 @@ export default function Home() {
               <div className="p-6 border-t border-gray-800/80 bg-[#070b14]/50 flex items-center justify-between gap-3">
                 <button
                   onClick={() => router.push(`/contacts/${selectedContact.id}`)}
-                  className="text-sm text-cyan-400 hover:text-cyan-300 font-medium hover:underline flex items-center gap-1"
+                  className="py-2 px-4 border border-cyan-500/50 hover:border-cyan-500 text-cyan-400 hover:text-cyan-300 rounded-lg text-sm font-semibold transition-colors"
                 >
-                  View Full Profile &rarr;
+                  View Profile
                 </button>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setActiveContactMenu(selectedContact)}
                     className="py-2 px-4 text-sm text-gray-300 hover:text-white border border-gray-700 rounded-lg hover:border-gray-600 transition-colors"
                   >
-                    Contact
+                    Reach Out
                   </button>
                   <button
                     onClick={() => router.push(`/log-touchpoint?contactId=${selectedContact.id}`)}
                     className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors"
                   >
-                    Log Touch
+                    Log
                   </button>
                 </div>
               </div>
@@ -1112,35 +1112,32 @@ export default function Home() {
             onClick={() => setActiveContactMenu(null)}
           >
             <div 
-              className="bg-[#2f3224] border border-[#4a4e39] rounded-3xl max-w-sm w-full overflow-hidden animate-scaleUp shadow-2xl flex flex-col"
+              className="bg-[#0b1120] border border-gray-800 rounded-3xl max-w-sm w-full overflow-hidden animate-scaleUp shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="px-6 pt-6 pb-4 border-b border-[#4a4e39]/60">
-                <h3 className="text-xl font-bold text-[#f1f2eb]">{activeContactMenu.name}</h3>
-                <p className="text-xs text-[#c3c6ad] uppercase tracking-widest mt-0.5">{activeContactMenu.relationship}</p>
+              <div className="px-6 pt-6 pb-4 border-b border-gray-800/80">
+                <h3 className="text-xl font-bold text-white">{activeContactMenu.name}</h3>
+                <p className="text-xs text-gray-400 uppercase tracking-widest mt-0.5">{activeContactMenu.relationship}</p>
               </div>
 
               {/* Actions List */}
-              <div className="divide-y divide-[#4a4e39]/60">
+              <div className="divide-y divide-gray-800/80">
                 {activeContactMenu.phone ? (
                   <>
                     {/* Call Row */}
                     <a
                       href={`tel:${activeContactMenu.phone}`}
                       onClick={() => setActiveContactMenu(null)}
-                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#383b2a]/60 transition-colors group"
+                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#111827] transition-colors group"
                     >
                       <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-[#c3c6ad] uppercase tracking-wider">phone</span>
-                          <span className="bg-[#4a4e39] text-[#f1f2eb] text-[9px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">recent</span>
-                        </div>
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Phone</span>
                         <div className="text-base font-semibold text-white mt-1 group-hover:text-cyan-300 transition-colors">
                           {activeContactMenu.phone}
                         </div>
                       </div>
-                      <div className="text-[#c3c6ad] group-hover:text-white transition-colors">
+                      <div className="text-gray-400 group-hover:text-white transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.302a12.01 12.01 0 01-5.907-5.907c-.44-.44-.274-.927.102-1.21l1.293-.97a1.125 1.125 0 00.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                         </svg>
@@ -1151,15 +1148,15 @@ export default function Home() {
                     <a
                       href={`sms:${activeContactMenu.phone}`}
                       onClick={() => setActiveContactMenu(null)}
-                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#383b2a]/60 transition-colors group"
+                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#111827] transition-colors group"
                     >
                       <div className="text-left">
-                        <span className="text-[10px] font-bold text-[#c3c6ad] uppercase tracking-wider block">text message</span>
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Text Message</span>
                         <div className="text-base font-semibold text-white mt-1 group-hover:text-cyan-300 transition-colors">
                           {activeContactMenu.phone}
                         </div>
                       </div>
-                      <div className="text-[#c3c6ad] group-hover:text-white transition-colors">
+                      <div className="text-gray-400 group-hover:text-white transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501c1.153-.086 2.294-.21 3.423-.379 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                         </svg>
@@ -1168,7 +1165,7 @@ export default function Home() {
                   </>
                 ) : (
                   <div className="px-6 py-4 text-center">
-                    <p className="text-xs text-[#c3c6ad] italic">No phone number configured.</p>
+                    <p className="text-xs text-gray-400 italic">No phone number configured.</p>
                   </div>
                 )}
 
@@ -1177,15 +1174,15 @@ export default function Home() {
                   <a
                     href={`mailto:${activeContactMenu.email}`}
                     onClick={() => setActiveContactMenu(null)}
-                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#383b2a]/60 transition-colors group"
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#111827] transition-colors group"
                   >
                     <div className="text-left">
-                      <span className="text-[10px] font-bold text-[#c3c6ad] uppercase tracking-wider block">email</span>
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Email</span>
                       <div className="text-base font-semibold text-white mt-1 group-hover:text-cyan-300 transition-colors break-all pr-2">
                         {activeContactMenu.email}
                       </div>
                     </div>
-                    <div className="text-[#c3c6ad] group-hover:text-white transition-colors">
+                    <div className="text-gray-400 group-hover:text-white transition-colors">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                       </svg>
@@ -1193,16 +1190,25 @@ export default function Home() {
                   </a>
                 ) : (
                   <div className="px-6 py-4 text-center">
-                    <p className="text-xs text-[#c3c6ad] italic">No email configured.</p>
+                    <p className="text-xs text-gray-400 italic">No email configured.</p>
                   </div>
                 )}
               </div>
 
-              {/* Close Button Panel */}
-              <div className="p-6 bg-[#25281d] border-t border-[#4a4e39]/60">
+              {/* Close & Edit Profile Button Panel */}
+              <div className="p-6 bg-[#070b14]/50 border-t border-gray-800/80 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => {
+                    router.push(`/contacts/${activeContactMenu.id}`);
+                    setActiveContactMenu(null);
+                  }}
+                  className="py-2.5 px-4 border border-cyan-500/50 hover:border-cyan-500 text-cyan-400 hover:text-cyan-300 rounded-xl text-sm font-semibold transition-colors text-center flex-1"
+                >
+                  Edit Profile
+                </button>
                 <button
                   onClick={() => setActiveContactMenu(null)}
-                  className="w-full py-3 bg-[#4a4e39] hover:bg-[#555a3f] text-[#f1f2eb] font-semibold rounded-2xl transition-colors text-sm"
+                  className="py-2.5 px-4 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors text-sm flex-1 text-center"
                 >
                   Close
                 </button>
