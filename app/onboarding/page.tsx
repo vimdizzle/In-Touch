@@ -80,9 +80,6 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Expandable optional form accordion
-  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
-
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
@@ -149,7 +146,6 @@ export default function OnboardingPage() {
       setPhone("");
       setEmail("");
       setNotes("");
-      setShowOptionalDetails(false);
     } catch (err: any) {
       setError(err.message || "Failed to add contact");
     } finally {
@@ -188,10 +184,9 @@ export default function OnboardingPage() {
     setPhone("");
     setEmail("");
     setNotes("");
-    setShowOptionalDetails(false);
   };
 
-  // Filter contacts by sidebar search
+  // Filter contacts by search
   const filteredContacts = contacts.filter((c) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase().trim();
@@ -224,7 +219,7 @@ export default function OnboardingPage() {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
 
       {/* Main unified onboarding container */}
-      <main className="w-full max-w-3xl bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl flex flex-col justify-between min-h-[500px] max-h-[90vh]">
+      <main className="w-full max-w-2xl bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl flex flex-col justify-between min-h-[500px] max-h-[90vh]">
         
         {/* STEP 1: WELCOME INTRO */}
         {step === "welcome" && (
@@ -254,15 +249,17 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 2: UNIFIED CIRCLE BUILDER */}
+        {/* STEP 2: SPACIOUS VERTICAL SETUP */}
         {step === "setup" && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden animate-fadeIn justify-between">
-            {/* Left Column: Spacious configuration form */}
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[58vh]">
+          <div className="flex-1 flex flex-col overflow-hidden animate-fadeIn justify-between">
+            {/* Scrollable Single Column Wrapper */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[62vh] space-y-8">
+              
+              {/* Form Section */}
               <div>
                 <h3 className="text-base font-bold text-white mb-0.5">Configure Contact</h3>
                 <p className="text-[11px] text-slate-400 mb-5">
-                  Configure connection cadences and details for one person at a time.
+                  Configure connections one by one. All optional details are shown below.
                 </p>
 
                 <form onSubmit={handleAddContact} className="space-y-4">
@@ -272,7 +269,7 @@ export default function OnboardingPage() {
                     </div>
                   )}
 
-                  {/* Name field - standard styling */}
+                  {/* Name Input */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Name *
@@ -287,7 +284,7 @@ export default function OnboardingPage() {
                     />
                   </div>
 
-                  {/* Relationship quick selection - standard styling */}
+                  {/* Relationship quick selector */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Relationship
@@ -321,7 +318,7 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  {/* Unified Cadence Selector - standard styling */}
+                  {/* Unified Cadence presets selector */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Cadence (how often to connect)
@@ -390,137 +387,113 @@ export default function OnboardingPage() {
                     )}
                   </div>
 
-                  {/* Accordion Toggle - Hides optional details to avoid scroll on mobile */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowOptionalDetails(!showOptionalDetails)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer transition-colors mb-2"
-                    >
-                      <span>{showOptionalDetails ? "Hide optional details" : "Add optional details (Location, Birthday, Notes, Phone, Email)"}</span>
-                      <svg
-                        className={`w-3.5 h-3.5 transition-transform duration-200 ${showOptionalDetails ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                      </svg>
-                    </button>
-
-                    {showOptionalDetails && (
-                      <div className="space-y-4 pt-3 border-t border-slate-800/80 animate-fadeIn">
-                        {/* Side-by-Side City/Country Location */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                              City (optional)
-                            </label>
-                            <input
-                              type="text"
-                              value={city}
-                              onChange={(e) => setCity(e.target.value)}
-                              placeholder="e.g. San Jose"
-                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                              Country (optional)
-                            </label>
-                            <input
-                              type="text"
-                              value={country}
-                              onChange={(e) => setCountry(e.target.value)}
-                              placeholder="e.g. United States"
-                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Combined Birthday selects matching the main app Add Contact modal */}
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                            Birthday (optional)
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <select
-                              value={birthdayMonth}
-                              onChange={(e) => {
-                                setBirthdayMonth(e.target.value);
-                                if (!e.target.value) setBirthdayDay("");
-                              }}
-                              className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-                            >
-                              <option value="">Month</option>
-                              {MONTHS.map((m) => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </select>
-                            <select
-                              value={birthdayDay}
-                              onChange={(e) => setBirthdayDay(e.target.value)}
-                              disabled={!birthdayMonth}
-                              className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm disabled:opacity-40"
-                            >
-                              <option value="">Day</option>
-                              {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
-                                <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Side-by-Side Optional phone/email */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                              Phone (optional)
-                            </label>
-                            <input
-                              type="tel"
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
-                              placeholder="+1 (555) 000-0000"
-                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                              Email (optional)
-                            </label>
-                            <input
-                              type="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              placeholder="example@email.com"
-                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Optional notes */}
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                            Notes (optional)
-                          </label>
-                          <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            rows={2}
-                            placeholder="e.g. Prefers FaceTime, ask about their new project..."
-                            className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                          />
-                        </div>
-                      </div>
-                    )}
+                  {/* Side-by-Side Location fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        City (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="e.g. San Jose"
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Country (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        placeholder="e.g. United States"
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                      />
+                    </div>
                   </div>
 
-                  {/* Circular Form Action Buttons - Replaced text with icons to match main app */}
+                  {/* Birthday select fields - Grouped matching Home page Add modal */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      Birthday (optional)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={birthdayMonth}
+                        onChange={(e) => {
+                          setBirthdayMonth(e.target.value);
+                          if (!e.target.value) setBirthdayDay("");
+                        }}
+                        className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                      >
+                        <option value="">Month</option>
+                        {MONTHS.map((m) => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={birthdayDay}
+                        onChange={(e) => setBirthdayDay(e.target.value)}
+                        disabled={!birthdayMonth}
+                        className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm disabled:opacity-40"
+                      >
+                        <option value="">Day</option>
+                        {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
+                          <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Side-by-Side Optional phone/email fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Phone (optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+1 (555) 000-0000"
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Email (optional)
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="example@email.com"
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes Field */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      Notes (optional)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={2}
+                      placeholder="e.g. Prefers WhatsApp, ask about new dog..."
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                    />
+                  </div>
+
+                  {/* Form Actions - Circular Icon buttons aligned to bottom-right */}
                   <div className="flex justify-end gap-3 pt-2">
-                    {/* Reset Form Button - Shown only if there is input */}
-                    {(name || relationship !== "Friend" || showOptionalDetails) && (
+                    {/* Clear/Cancel Button */}
+                    {(name || relationship !== "Friend" || cadenceDays !== 30 || city || country || birthdayMonth || phone || email || notes) && (
                       <button
                         type="button"
                         onClick={handleClearForm}
@@ -533,7 +506,7 @@ export default function OnboardingPage() {
                       </button>
                     )}
 
-                    {/* Circular Add to Circle Button */}
+                    {/* Circular Add to Circle plus-icon button */}
                     <button
                       type="submit"
                       disabled={saving || !name.trim()}
@@ -554,83 +527,86 @@ export default function OnboardingPage() {
                   </div>
                 </form>
               </div>
-            </div>
 
-            {/* Right Column: Clean, simple styled Sidebar list */}
-            <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-6 lg:pt-0 lg:pl-6 flex flex-col overflow-hidden max-h-[58vh] shrink-0">
-              <h4 className="text-xs font-bold text-white mb-3 flex items-center justify-between shrink-0">
-                <span>Added Connections</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 font-semibold">
-                  {contacts.length} total
-                </span>
-              </h4>
-
-              {/* Sidebar Search Bar - Leverages styling from Home page search bar */}
+              {/* Added Connections List Section - Shown directly under the form */}
               {contacts.length > 0 && (
-                <div className="mb-3 relative shrink-0">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search connections..."
-                    className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500"
-                  />
-                  {searchQuery.trim() && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
-                      title="Clear search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              )}
+                <div className="pt-6 border-t border-slate-800/80 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                      <span>Added Connections</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 font-semibold">
+                        {contacts.length} total
+                      </span>
+                    </h4>
+                  </div>
 
-              {filteredContacts.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center bg-slate-900/10 border border-dashed border-slate-800/80 rounded-2xl p-6 text-center animate-fadeIn min-h-[100px] lg:min-h-0">
-                  <p className="text-[10px] text-slate-500 max-w-[150px] leading-relaxed">
-                    {searchQuery.trim() ? "No matching contacts found." : "No contacts configured yet. Use the form on the left to add someone."}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                  {filteredContacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="bg-[#111827]/40 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-2.5 flex justify-between items-center transition-all duration-200 animate-scaleUp"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-cyan-400 border border-cyan-500/10 text-xs shrink-0">
-                          {contact.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <h5 className="font-bold text-white text-[11px] leading-none mb-1 truncate">{contact.name}</h5>
-                          <div className="flex gap-1">
-                            <span className="text-[9px] text-slate-400 font-semibold px-1.5 py-0.2 bg-slate-900 rounded border border-slate-800 leading-none">
-                              {contact.relationship}
-                            </span>
-                            <span className="text-[9px] text-cyan-400 font-semibold px-1.5 py-0.2 bg-slate-900 rounded border border-slate-800 leading-none">
-                              {contact.cadence_days}d
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Small, clean circular trash button - scaled down to match dashboard tweaks */}
+                  {/* Sidebar Search Bar matching the look and feel from the Home page search bar */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search connections..."
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500"
+                    />
+                    {searchQuery.trim() && (
                       <button
-                        onClick={() => handleDeleteContact(contact.id!)}
-                        className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 border border-slate-800 hover:border-red-500/20 rounded-full hover:bg-red-500/5 transition-all duration-200 cursor-pointer shrink-0"
-                        title="Remove Contact"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                        title="Clear search"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
+                    )}
+                  </div>
+
+                  {/* List items grid */}
+                  {filteredContacts.length === 0 ? (
+                    <div className="bg-slate-900/10 border border-dashed border-slate-800/80 rounded-2xl p-6 text-center animate-fadeIn min-h-[80px]">
+                      <p className="text-[10px] text-slate-500 max-w-[150px] leading-relaxed mx-auto">
+                        No matching connections found.
+                      </p>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+                      {filteredContacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          className="bg-[#111827]/40 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-3 flex justify-between items-center transition-all duration-200 animate-scaleUp"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-cyan-400 border border-cyan-500/10 text-xs shrink-0">
+                              {contact.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <h5 className="font-bold text-white text-[11px] leading-none mb-1.5 truncate">{contact.name}</h5>
+                              <div className="flex gap-1.5">
+                                <span className="text-[9px] text-slate-400 font-semibold px-2 py-0.5 bg-slate-900 rounded border border-slate-800 leading-none">
+                                  {contact.relationship}
+                                </span>
+                                <span className="text-[9px] text-cyan-400 font-semibold px-2 py-0.5 bg-slate-900 rounded border border-slate-800 leading-none">
+                                  {contact.cadence_days}d
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Tidy circular trash button */}
+                          <button
+                            onClick={() => handleDeleteContact(contact.id!)}
+                            className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 border border-slate-800 hover:border-red-500/20 rounded-full hover:bg-red-500/5 transition-all duration-200 cursor-pointer shrink-0"
+                            title="Remove Contact"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
