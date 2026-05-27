@@ -65,6 +65,9 @@ export default function OnboardingPage() {
   // 3-Step Wizard state
   const [step, setStep] = useState<OnboardingStep>("welcome");
 
+  // Onboarding Sidebar Search State
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Unified Form state for one contact at a time
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("Friend");
@@ -76,6 +79,9 @@ export default function OnboardingPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Expandable optional form accordion
+  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -129,7 +135,7 @@ export default function OnboardingPage() {
 
       if (error) throw error;
 
-      // Stage contact instantly to lists
+      // Stage contact instantly to list
       setContacts([data, ...contacts]);
       
       // Reset Unified Setup Form completely
@@ -143,6 +149,7 @@ export default function OnboardingPage() {
       setPhone("");
       setEmail("");
       setNotes("");
+      setShowOptionalDetails(false);
     } catch (err: any) {
       setError(err.message || "Failed to add contact");
     } finally {
@@ -170,6 +177,32 @@ export default function OnboardingPage() {
     router.push("/");
   };
 
+  const handleClearForm = () => {
+    setName("");
+    setRelationship("Friend");
+    setCadenceDays(30);
+    setCity("");
+    setCountry("");
+    setBirthdayMonth("");
+    setBirthdayDay("");
+    setPhone("");
+    setEmail("");
+    setNotes("");
+    setShowOptionalDetails(false);
+  };
+
+  // Filter contacts by sidebar search
+  const filteredContacts = contacts.filter((c) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      c.name.toLowerCase().includes(query) ||
+      c.relationship.toLowerCase().includes(query) ||
+      c.city?.toLowerCase().includes(query) ||
+      c.country?.toLowerCase().includes(query)
+    );
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
@@ -178,7 +211,7 @@ export default function OnboardingPage() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="text-sm font-semibold tracking-wide text-gray-500">Loading your profile...</span>
+          <span className="text-sm font-semibold tracking-wide text-gray-400">Loading your profile...</span>
         </div>
       </div>
     );
@@ -203,7 +236,7 @@ export default function OnboardingPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white mb-3">
+            <h2 className="text-2xl font-bold text-white mb-3">
               Stay in Touch
             </h2>
             <p className="text-slate-400 text-xs leading-relaxed mb-8 max-w-sm">
@@ -234,14 +267,14 @@ export default function OnboardingPage() {
 
                 <form onSubmit={handleAddContact} className="space-y-4">
                   {error && (
-                    <div className="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-xl text-xs">
+                    <div className="p-3 bg-red-900/20 border border-red-800 text-red-400 rounded-md text-xs">
                       {error}
                     </div>
                   )}
 
-                  {/* Name field */}
+                  {/* Name field - standard styling */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Name *
                     </label>
                     <input
@@ -250,13 +283,13 @@ export default function OnboardingPage() {
                       onChange={(e) => setName(e.target.value)}
                       required
                       placeholder="e.g. Mom, Jane Doe, David"
-                      className="w-full px-4 py-2.5 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs placeholder-slate-600 transition-all"
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500 transition-all"
                     />
                   </div>
 
-                  {/* Relationship quick selection */}
+                  {/* Relationship quick selection - standard styling */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Relationship
                     </label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
@@ -265,7 +298,7 @@ export default function OnboardingPage() {
                           key={rel}
                           type="button"
                           onClick={() => setRelationship(rel)}
-                          className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
                             relationship === rel
                               ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
                               : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
@@ -278,7 +311,7 @@ export default function OnboardingPage() {
                     <select
                       value={relationship}
                       onChange={(e) => setRelationship(e.target.value)}
-                      className="w-full px-4 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs"
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                     >
                       {RELATIONSHIPS.map((rel) => (
                         <option key={rel} value={rel}>
@@ -288,10 +321,10 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  {/* Unified Cadence Selector */}
+                  {/* Unified Cadence Selector - standard styling */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                      Cadence (How often to connect)
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      Cadence (how often to connect)
                     </label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {[
@@ -306,10 +339,10 @@ export default function OnboardingPage() {
                             key={preset.days}
                             type="button"
                             onClick={() => setCadenceDays(preset.days)}
-                            className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
                               isSelected
                                 ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                                : "bg-[#111827] border-gray-700/80 text-slate-300 hover:border-gray-600 hover:text-white"
+                                : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
                             }`}
                           >
                             {preset.label}
@@ -323,10 +356,10 @@ export default function OnboardingPage() {
                             setCadenceDays(45); // Set custom to 45 by default when toggled
                           }
                         }}
-                        className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
                           ![7, 14, 30, 90].includes(cadenceDays)
                             ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                            : "bg-[#111827] border-gray-700/80 text-slate-300 hover:border-gray-600 hover:text-white"
+                            : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
                         }`}
                       >
                         Custom
@@ -350,147 +383,181 @@ export default function OnboardingPage() {
                             }
                           }}
                           min="1"
-                          className="w-16 px-2.5 py-1 bg-[#111827] border border-slate-700 rounded-lg text-white text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                          className="w-16 px-2.5 py-1 bg-[#111827] border border-gray-700 rounded-md text-white text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-cyan-500"
                         />
                         <span className="text-[10px] text-slate-400 font-medium">days</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Side-by-Side City/Country Location */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        📍 City (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="e.g. San Francisco"
-                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Country (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        placeholder="e.g. United States"
-                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Side-by-Side Birthday Month/Day selects */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        🎂 Month (Optional)
-                      </label>
-                      <select
-                        value={birthdayMonth}
-                        onChange={(e) => {
-                          setBirthdayMonth(e.target.value);
-                          if (!e.target.value) setBirthdayDay("");
-                        }}
-                        className="w-full px-2.5 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  {/* Accordion Toggle - Hides optional details to avoid scroll on mobile */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowOptionalDetails(!showOptionalDetails)}
+                      className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer transition-colors mb-2"
+                    >
+                      <span>{showOptionalDetails ? "Hide optional details" : "Add optional details (Location, Birthday, Notes, Phone, Email)"}</span>
+                      <svg
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${showOptionalDetails ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        viewBox="0 0 24 24"
                       >
-                        <option value="">Month</option>
-                        {MONTHS.map((m) => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Day (Optional)
-                      </label>
-                      <select
-                        value={birthdayDay}
-                        onChange={(e) => setBirthdayDay(e.target.value)}
-                        disabled={!birthdayMonth}
-                        className="w-full px-2.5 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40"
-                      >
-                        <option value="">Day</option>
-                        {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
-                          <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Side-by-Side Optional phone/email */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Phone (Optional)
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+1 (555) 000-0000"
-                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                        Email (Optional)
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="example@email.com"
-                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Optional notes */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                      Notes (Optional)
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                      placeholder="e.g. Prefers FaceTime, ask about their new project..."
-                      className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
-                    />
-                  </div>
-
-                  {/* Non-wrapping, fully padded Add button */}
-                  <button
-                    type="submit"
-                    disabled={saving || !name.trim()}
-                    className="w-full h-11 flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white rounded-full font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(6,182,212,0.15)] cursor-pointer py-2.5 px-6 shrink-0"
-                  >
-                    {saving ? (
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                       </svg>
-                    ) : (
-                      <span className="flex items-center gap-2 whitespace-nowrap text-sm tracking-wide">
-                        Add to Circle
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    </button>
+
+                    {showOptionalDetails && (
+                      <div className="space-y-4 pt-3 border-t border-slate-800/80 animate-fadeIn">
+                        {/* Side-by-Side City/Country Location */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                              City (optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                              placeholder="e.g. San Jose"
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                              Country (optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={country}
+                              onChange={(e) => setCountry(e.target.value)}
+                              placeholder="e.g. United States"
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Combined Birthday selects matching the main app Add Contact modal */}
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                            Birthday (optional)
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              value={birthdayMonth}
+                              onChange={(e) => {
+                                setBirthdayMonth(e.target.value);
+                                if (!e.target.value) setBirthdayDay("");
+                              }}
+                              className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                            >
+                              <option value="">Month</option>
+                              {MONTHS.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={birthdayDay}
+                              onChange={(e) => setBirthdayDay(e.target.value)}
+                              disabled={!birthdayMonth}
+                              className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm disabled:opacity-40"
+                            >
+                              <option value="">Day</option>
+                              {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
+                                <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Side-by-Side Optional phone/email */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                              Phone (optional)
+                            </label>
+                            <input
+                              type="tel"
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                              placeholder="+1 (555) 000-0000"
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                              Email (optional)
+                            </label>
+                            <input
+                              type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              placeholder="example@email.com"
+                              className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Optional notes */}
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                            Notes (optional)
+                          </label>
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            rows={2}
+                            placeholder="e.g. Prefers FaceTime, ask about their new project..."
+                            className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Circular Form Action Buttons - Replaced text with icons to match main app */}
+                  <div className="flex justify-end gap-3 pt-2">
+                    {/* Reset Form Button - Shown only if there is input */}
+                    {(name || relationship !== "Friend" || showOptionalDetails) && (
+                      <button
+                        type="button"
+                        onClick={handleClearForm}
+                        className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
+                        title="Clear Form"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Circular Add to Circle Button */}
+                    <button
+                      type="submit"
+                      disabled={saving || !name.trim()}
+                      className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/50 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(6,182,212,0.1)] cursor-pointer shrink-0"
+                      title="Add to Circle"
+                    >
+                      {saving ? (
+                        <svg className="animate-spin h-5 w-5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
-                      </span>
-                    )}
-                  </button>
+                      )}
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
 
             {/* Right Column: Clean, simple styled Sidebar list */}
-            <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-6 lg:pt-0 lg:pl-6 flex flex-col overflow-hidden max-h-[58vh]">
+            <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-6 lg:pt-0 lg:pl-6 flex flex-col overflow-hidden max-h-[58vh] shrink-0">
               <h4 className="text-xs font-bold text-white mb-3 flex items-center justify-between shrink-0">
                 <span>Added Connections</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 font-semibold">
@@ -498,15 +565,39 @@ export default function OnboardingPage() {
                 </span>
               </h4>
 
-              {contacts.length === 0 ? (
+              {/* Sidebar Search Bar - Leverages styling from Home page search bar */}
+              {contacts.length > 0 && (
+                <div className="mb-3 relative shrink-0">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search connections..."
+                    className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500"
+                  />
+                  {searchQuery.trim() && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                      title="Clear search"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {filteredContacts.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center bg-slate-900/10 border border-dashed border-slate-800/80 rounded-2xl p-6 text-center animate-fadeIn min-h-[100px] lg:min-h-0">
                   <p className="text-[10px] text-slate-500 max-w-[150px] leading-relaxed">
-                    No contacts configured yet. Use the form on the left to add someone.
+                    {searchQuery.trim() ? "No matching contacts found." : "No contacts configured yet. Use the form on the left to add someone."}
                   </p>
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                  {contacts.map((contact) => (
+                  {filteredContacts.map((contact) => (
                     <div
                       key={contact.id}
                       className="bg-[#111827]/40 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-2.5 flex justify-between items-center transition-all duration-200 animate-scaleUp"
@@ -528,7 +619,7 @@ export default function OnboardingPage() {
                         </div>
                       </div>
 
-                      {/* Small, clean circular trash button */}
+                      {/* Small, clean circular trash button - scaled down to match dashboard tweaks */}
                       <button
                         onClick={() => handleDeleteContact(contact.id!)}
                         className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 border border-slate-800 hover:border-red-500/20 rounded-full hover:bg-red-500/5 transition-all duration-200 cursor-pointer shrink-0"
@@ -566,21 +657,30 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Minimal Navigation Footer */}
+        {/* Wizard Navigation Footer - Circular Icon buttons to match main dashboard styles */}
         {step === "setup" && (
           <div className="mt-6 pt-5 border-t border-slate-800/80 flex justify-between items-center shrink-0">
+            {/* Back Button - Left Arrow Circular icon */}
             <button
               onClick={() => setStep("welcome")}
-              className="px-5 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
+              title="Back to Intro"
             >
-              Back to Intro
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
             </button>
+
+            {/* Finish Button - Green checkmark circular icon */}
             <button
               onClick={() => setStep("done")}
               disabled={contacts.length === 0}
-              className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-full font-bold shadow-md shadow-cyan-950/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-xs"
+              className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/40 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+              title="Finish Setup"
             >
-              Finish Setup
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
             </button>
           </div>
         )}
