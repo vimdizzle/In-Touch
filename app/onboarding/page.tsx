@@ -234,7 +234,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-start sm:justify-center items-center py-2 sm:py-6 px-4 relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-start sm:justify-center items-center pt-14 pb-6 sm:py-6 px-4 relative overflow-hidden select-none">
       {/* Low-opacity subtle glowing backdrops */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
@@ -278,7 +278,7 @@ export default function OnboardingPage() {
               
               {/* Form Section - Matches Add Contact fields exactly */}
               <div>
-                <h3 className="text-base font-bold text-white mb-0.5">Onboard Contacts</h3>
+                <h3 className="text-xl font-bold text-white mb-0.5">Onboard Contacts</h3>
                 <p className="text-[11px] text-slate-400 mb-5">
                   Add the people in your circle. Form fields match the Add Contact dashboard modal exactly.
                 </p>
@@ -548,12 +548,12 @@ export default function OnboardingPage() {
                 </form>
               </div>
 
-              {/* Added Connections List Section - Shown directly under the form */}
+              {/* Added Contacts List Section - Shown directly under the form */}
               {contacts.length > 0 && (
                 <div className="pt-6 border-t border-slate-800/80 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
-                      <span>Added Connections</span>
+                    <h4 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>Added Contacts</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 font-semibold">
                         {contacts.length} total
                       </span>
@@ -566,7 +566,7 @@ export default function OnboardingPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search connections..."
+                      placeholder="Search contacts..."
                       className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-gray-500"
                     />
                     {searchQuery.trim() && (
@@ -586,7 +586,7 @@ export default function OnboardingPage() {
                   {filteredContacts.length === 0 ? (
                     <div className="bg-slate-900/10 border border-dashed border-slate-800/80 rounded-2xl p-6 text-center animate-fadeIn min-h-[80px]">
                       <p className="text-[10px] text-slate-500 max-w-[150px] leading-relaxed mx-auto">
-                        No matching connections found.
+                        No matching contacts found.
                       </p>
                     </div>
                   ) : (

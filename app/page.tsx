@@ -1515,7 +1515,7 @@ export default function Home() {
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Cadence (how often to connect)
+                        Cadence
                       </label>
                       <div className="flex flex-wrap gap-2 mb-2">
                         {CADENCE_PRESETS.map((preset) => (
@@ -1523,7 +1523,7 @@ export default function Home() {
                             key={preset.days}
                             type="button"
                             onClick={() => setEditCadenceDays(preset.days)}
-                            className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                            className={`px-3 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
                               editCadenceDays === preset.days
                                 ? "bg-cyan-500 border-cyan-500 text-white"
                                 : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
@@ -1532,24 +1532,43 @@ export default function Home() {
                             {preset.label}
                           </button>
                         ))}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={editCadenceDays}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === "") setEditCadenceDays(0);
-                            else {
-                              const num = parseInt(val);
-                              if (!isNaN(num) && num > 0) setEditCadenceDays(num);
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if ([7, 30, 90, 365].includes(editCadenceDays)) {
+                              setEditCadenceDays(45); // Set custom default to 45
                             }
                           }}
-                          min="1"
-                          className="w-24 px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-                        />
-                        <span className="text-gray-400 text-sm">days</span>
+                          className={`px-3 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
+                            ![7, 30, 90, 365].includes(editCadenceDays)
+                              ? "bg-cyan-500 border-cyan-500 text-white"
+                              : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                          }`}
+                        >
+                          Custom
+                        </button>
                       </div>
+                      
+                      {/* Custom numerical input field - only shown when Custom selected */}
+                      {![7, 30, 90, 365].includes(editCadenceDays) && (
+                        <div className="flex items-center gap-2 animate-fadeIn mt-2 pl-1">
+                          <input
+                            type="number"
+                            value={editCadenceDays}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "") setEditCadenceDays(0);
+                              else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num > 0) setEditCadenceDays(num);
+                              }
+                            }}
+                            min="1"
+                            className="w-24 px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                          />
+                          <span className="text-gray-400 text-sm">days</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -2277,7 +2296,7 @@ export default function Home() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Cadence (how often to connect)
+                    Cadence
                   </label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {CADENCE_PRESETS.map((preset) => (
@@ -2285,7 +2304,7 @@ export default function Home() {
                         key={preset.days}
                         type="button"
                         onClick={() => setAddCadenceDays(preset.days)}
-                        className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                        className={`px-3 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
                           addCadenceDays === preset.days
                             ? "bg-cyan-500 border-cyan-500 text-white"
                             : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
@@ -2294,24 +2313,43 @@ export default function Home() {
                         {preset.label}
                       </button>
                     ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={addCadenceDays}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "") setAddCadenceDays(0);
-                        else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num > 0) setAddCadenceDays(num);
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if ([7, 30, 90, 365].includes(addCadenceDays)) {
+                          setAddCadenceDays(45); // Set custom default to 45
                         }
                       }}
-                      min="1"
-                      className="w-24 px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-                    />
-                    <span className="text-gray-400 text-sm">days</span>
+                      className={`px-3 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
+                        ![7, 30, 90, 365].includes(addCadenceDays)
+                          ? "bg-cyan-500 border-cyan-500 text-white"
+                          : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                      }`}
+                    >
+                      Custom
+                    </button>
                   </div>
+                  
+                  {/* Custom numerical input field - only shown when Custom selected */}
+                  {![7, 30, 90, 365].includes(addCadenceDays) && (
+                    <div className="flex items-center gap-2 animate-fadeIn mt-2 pl-1">
+                      <input
+                        type="number"
+                        value={addCadenceDays}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") setAddCadenceDays(0);
+                          else {
+                            const num = parseInt(val);
+                            if (!isNaN(num) && num > 0) setAddCadenceDays(num);
+                          }
+                        }}
+                        min="1"
+                        className="w-24 px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                      />
+                      <span className="text-gray-400 text-sm">days</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
