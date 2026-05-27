@@ -52,24 +52,7 @@ const getDaysInMonth = (month: string): number[] => {
   return Array.from({ length: daysInMonth }, (_, i) => i + 1);
 };
 
-const getRelationshipDefaultDays = (rel: string): number => {
-  switch (rel) {
-    case "Parent":
-    case "Sibling":
-      return 7; // Weekly
-    case "Family":
-    case "Mentor":
-      return 14; // Bi-weekly
-    case "Friend":
-      return 30; // Monthly
-    case "Coworker":
-      return 90; // Quarterly
-    default:
-      return 30; // Monthly
-  }
-};
-
-type OnboardingStep = "welcome" | "contacts" | "cadence" | "details" | "celebrate";
+type OnboardingStep = "welcome" | "setup" | "done";
 
 export default function OnboardingPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -79,15 +62,20 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // Wizard state
+  // 3-Step Wizard state
   const [step, setStep] = useState<OnboardingStep>("welcome");
 
-  // Form state for adding contact
+  // Unified Form state for one contact at a time
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("Friend");
+  const [cadenceDays, setCadenceDays] = useState(30);
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [birthdayMonth, setBirthdayMonth] = useState("");
+  const [birthdayDay, setBirthdayDay] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [showOptionalFields, setShowOptionalFields] = useState(false);
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -105,8 +93,6 @@ export default function OnboardingPage() {
         
         if (!error && data) {
           setContacts(data);
-          // If user already has contacts, they shouldn't be forced into onboarding,
-          // but if they navigate here manually, starting at "welcome" is fine.
         }
         
         setLoading(false);
@@ -121,7 +107,7 @@ export default function OnboardingPage() {
     setSaving(true);
     setError("");
     try {
-      const defaultDays = getRelationshipDefaultDays(relationship);
+      const birthdayForDB = formatBirthdayForDB(birthdayMonth, birthdayDay);
       const { data, error } = await supabase
         .from("contacts")
         .insert([
@@ -129,9 +115,13 @@ export default function OnboardingPage() {
             user_id: user.id,
             name: name.trim(),
             relationship: relationship,
-            cadence_days: defaultDays,
+            cadence_days: cadenceDays,
+            city: city.trim() || null,
+            country: country.trim() || null,
+            birthday: birthdayForDB,
             phone: phone.trim() || null,
             email: email.trim() || null,
+            notes: notes.trim() || null,
           },
         ])
         .select()
@@ -139,15 +129,20 @@ export default function OnboardingPage() {
 
       if (error) throw error;
 
-      // Update contacts list with animation
+      // Stage contact instantly to lists
       setContacts([data, ...contacts]);
       
-      // Reset Quick Add Form
+      // Reset Unified Setup Form completely
       setName("");
+      setRelationship("Friend");
+      setCadenceDays(30);
+      setCity("");
+      setCountry("");
+      setBirthdayMonth("");
+      setBirthdayDay("");
       setPhone("");
       setEmail("");
-      setShowOptionalFields(false);
-      setRelationship("Friend");
+      setNotes("");
     } catch (err: any) {
       setError(err.message || "Failed to add contact");
     } finally {
@@ -171,67 +166,8 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleUpdateCadence = async (contactId: string, days: number) => {
-    // Optimistic UI update
-    setContacts((prev) =>
-      prev.map((c) => (c.id === contactId ? { ...c, cadence_days: days } : c))
-    );
-
-    // Database update in background
-    const { error } = await supabase
-      .from("contacts")
-      .update({ cadence_days: days })
-      .eq("id", contactId);
-
-    if (error) {
-      console.error("Failed to update cadence in DB:", error);
-    }
-  };
-
-  const handleUpdateDetails = async (contactId: string, updates: Partial<Contact>) => {
-    // Optimistic UI update
-    setContacts((prev) =>
-      prev.map((c) => (c.id === contactId ? { ...c, ...updates } : c))
-    );
-
-    // Database update in background
-    const { error } = await supabase
-      .from("contacts")
-      .update(updates)
-      .eq("id", contactId);
-
-    if (error) {
-      console.error("Failed to update contact details in DB:", error);
-    }
-  };
-
-  const handleUpdateBirthday = async (contactId: string, month: string, day: string) => {
-    const birthdayForDB = formatBirthdayForDB(month, day);
-    await handleUpdateDetails(contactId, { birthday: birthdayForDB || undefined });
-  };
-
-  const handleNextStep = () => {
-    if (step === "welcome") setStep("contacts");
-    else if (step === "contacts") {
-      if (contacts.length > 0) setStep("cadence");
-    } else if (step === "cadence") setStep("details");
-    else if (step === "details") setStep("celebrate");
-  };
-
-  const handlePrevStep = () => {
-    if (step === "contacts") setStep("welcome");
-    else if (step === "cadence") setStep("contacts");
-    else if (step === "details") setStep("cadence");
-    else if (step === "celebrate") setStep("details");
-  };
-
   const handleFinish = () => {
     router.push("/");
-  };
-
-  const getStepIndex = (s: OnboardingStep): number => {
-    const stepsOrder: OnboardingStep[] = ["welcome", "contacts", "cadence", "details", "celebrate"];
-    return stepsOrder.indexOf(s);
   };
 
   if (loading) {
@@ -242,120 +178,58 @@ export default function OnboardingPage() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="text-sm font-semibold tracking-wide text-gray-400">Loading your profile...</span>
+          <span className="text-sm font-semibold tracking-wide text-gray-500">Loading your profile...</span>
         </div>
       </div>
     );
   }
 
-  const stepsList: { id: OnboardingStep; label: string }[] = [
-    { id: "welcome", label: "Intro" },
-    { id: "contacts", label: "Add Circle" },
-    { id: "cadence", label: "Rhythms" },
-    { id: "details", label: "Details" },
-    { id: "celebrate", label: "Complete" },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-between items-center py-8 px-4 relative overflow-hidden select-none">
-      {/* Glowing Ambient Background Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10 animate-pulse duration-[8000ms]" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10 animate-pulse duration-[10000ms]" />
+    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-center items-center py-6 px-4 relative overflow-hidden select-none">
+      {/* Low-opacity subtle glowing backdrops */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
 
-      {/* Title block / SEO Semantic Heading */}
-      <header className="mb-6 text-center shrink-0">
-        <h1 className="text-sm uppercase tracking-widest text-slate-500 font-extrabold">
-          In Touch Onboarding
-        </h1>
-      </header>
-
-      {/* Stepper Progress Bar (Visible at all steps except Welcome & Celebrate) */}
-      {step !== "welcome" && step !== "celebrate" && (
-        <div className="w-full max-w-xl mx-auto mb-10 px-4 shrink-0">
-          <div className="flex justify-between items-center relative">
-            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-slate-800/80 z-0" />
-            <div
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-gradient-to-r from-cyan-400 to-indigo-400 transition-all duration-500 z-0"
-              style={{
-                width: `${(getStepIndex(step) / (stepsList.length - 1)) * 100}%`,
-              }}
-            />
-            {stepsList.map((s, idx) => {
-              const isCompleted = getStepIndex(step) > idx;
-              const isActive = step === s.id;
-              return (
-                <div key={s.id} className="flex flex-col items-center relative z-10">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                      isCompleted
-                        ? "bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-                        : isActive
-                        ? "bg-slate-900 border-2 border-cyan-400 text-cyan-400 scale-110 ring-4 ring-cyan-950/40"
-                        : "bg-slate-900 border border-slate-800 text-slate-500"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    ) : (
-                      idx + 1
-                    )}
-                  </div>
-                  <span
-                    className={`text-[9px] font-bold tracking-wider uppercase mt-2.5 hidden sm:block transition-colors duration-300 ${
-                      isActive ? "text-cyan-400" : isCompleted ? "text-slate-400" : "text-slate-600"
-                    }`}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Main glassmorphic card container */}
-      <main className="w-full max-w-2xl bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl flex flex-col justify-between flex-1 min-h-[500px] max-h-[85vh]">
+      {/* Main unified onboarding container */}
+      <main className="w-full max-w-3xl bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl flex flex-col justify-between min-h-[500px] max-h-[90vh]">
         
-        {/* STEP 1: WELCOME SCREEN */}
+        {/* STEP 1: WELCOME INTRO */}
         {step === "welcome" && (
-          <div className="flex flex-col items-center justify-center py-6 text-center max-w-md mx-auto my-auto animate-scaleUp">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center p-[2px] mb-8 shadow-[0_0_30px_rgba(6,182,212,0.2)]">
+          <div className="flex flex-col items-center justify-center py-8 text-center max-w-md mx-auto my-auto animate-scaleUp">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center p-[2px] mb-8 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
               <div className="w-full h-full bg-[#020617] rounded-full flex items-center justify-center">
-                <svg className="w-10 h-10 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94-3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-white mb-4">
-              Welcome to <span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">In Touch</span>
+            <h2 className="text-2xl font-extrabold tracking-tight text-white mb-3">
+              Stay in Touch
             </h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-8">
-              Stay connected with those who matter most. Let's configure your circle, setup connection cadences, and log reminders effortlessly.
+            <p className="text-slate-400 text-xs leading-relaxed mb-8 max-w-sm">
+              Keep track of the relationships that matter most to you. Add contacts, set mindful reminder rhythms, and never lose touch.
             </p>
             <button
-              onClick={() => setStep("contacts")}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-full font-bold shadow-[0_4px_20px_rgba(6,182,212,0.25)] hover:shadow-[0_4px_25px_rgba(6,182,212,0.4)] transition-all duration-300 flex items-center gap-2 group cursor-pointer"
+              onClick={() => setStep("setup")}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-full font-bold text-xs shadow-md shadow-cyan-950/20 transition-all duration-200 flex items-center gap-2 group cursor-pointer"
             >
               Get Started
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </button>
           </div>
         )}
 
-        {/* STEP 2: ADD CONTACTS */}
-        {step === "contacts" && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden animate-fadeIn">
-            {/* Left Column: Quick Add Form */}
-            <div className="flex-1 flex flex-col justify-between overflow-y-auto pr-1">
+        {/* STEP 2: UNIFIED CIRCLE BUILDER */}
+        {step === "setup" && (
+          <div className="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden animate-fadeIn justify-between">
+            {/* Left Column: Spacious configuration form */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[58vh]">
               <div>
-                <h3 className="text-lg font-bold text-white mb-1">Build Your Circle</h3>
-                <p className="text-xs text-slate-400 mb-6">
-                  Who do you want to keep in touch with? Add them to your circle.
+                <h3 className="text-base font-bold text-white mb-0.5">Configure Contact</h3>
+                <p className="text-[11px] text-slate-400 mb-5">
+                  Configure connection cadences and details for one person at a time.
                 </p>
 
                 <form onSubmit={handleAddContact} className="space-y-4">
@@ -365,6 +239,7 @@ export default function OnboardingPage() {
                     </div>
                   )}
 
+                  {/* Name field */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                       Name *
@@ -375,21 +250,22 @@ export default function OnboardingPage() {
                       onChange={(e) => setName(e.target.value)}
                       required
                       placeholder="e.g. Mom, Jane Doe, David"
-                      className="w-full px-4 py-2.5 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-slate-600 transition-all"
+                      className="w-full px-4 py-2.5 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs placeholder-slate-600 transition-all"
                     />
                   </div>
 
+                  {/* Relationship quick selection */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                       Relationship
                     </label>
-                    <div className="flex flex-wrap gap-2 mb-2">
+                    <div className="flex flex-wrap gap-1.5 mb-2">
                       {["Parent", "Sibling", "Friend", "Family", "Coworker"].map((rel) => (
                         <button
                           key={rel}
                           type="button"
                           onClick={() => setRelationship(rel)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
+                          className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
                             relationship === rel
                               ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
                               : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
@@ -402,7 +278,7 @@ export default function OnboardingPage() {
                     <select
                       value={relationship}
                       onChange={(e) => setRelationship(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs"
+                      className="w-full px-4 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs"
                     >
                       {RELATIONSHIPS.map((rel) => (
                         <option key={rel} value={rel}>
@@ -412,59 +288,188 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  {/* Accordion / Optional Info Toggle */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowOptionalFields(!showOptionalFields)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <span>{showOptionalFields ? "Hide optional info" : "Add contact info (phone, email)"}</span>
-                      <svg
-                        className={`w-3.5 h-3.5 transition-transform duration-200 ${showOptionalFields ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        viewBox="0 0 24 24"
+                  {/* Unified Cadence Selector */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Cadence (How often to connect)
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {[
+                        { label: "Weekly", days: 7 },
+                        { label: "Bi-weekly", days: 14 },
+                        { label: "Monthly", days: 30 },
+                        { label: "Quarterly", days: 90 },
+                      ].map((preset) => {
+                        const isSelected = cadenceDays === preset.days;
+                        return (
+                          <button
+                            key={preset.days}
+                            type="button"
+                            onClick={() => setCadenceDays(preset.days)}
+                            className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
+                              isSelected
+                                ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
+                                : "bg-[#111827] border-gray-700/80 text-slate-300 hover:border-gray-600 hover:text-white"
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ([7, 14, 30, 90].includes(cadenceDays)) {
+                            setCadenceDays(45); // Set custom to 45 by default when toggled
+                          }
+                        }}
+                        className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
+                          ![7, 14, 30, 90].includes(cadenceDays)
+                            ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
+                            : "bg-[#111827] border-gray-700/80 text-slate-300 hover:border-gray-600 hover:text-white"
+                        }`}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                      </svg>
-                    </button>
+                        Custom
+                      </button>
+                    </div>
 
-                    {showOptionalFields && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 animate-fadeIn">
-                        <div>
-                          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                            Phone
-                          </label>
-                          <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            placeholder="+1 (555) 000-0000"
-                            className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs placeholder-slate-700"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                            Email
-                          </label>
-                          <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="example@email.com"
-                            className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xs placeholder-slate-700"
-                          />
-                        </div>
+                    {/* Inline custom numerical input */}
+                    {![7, 14, 30, 90].includes(cadenceDays) && (
+                      <div className="flex items-center gap-2 animate-fadeIn mt-1 pl-1">
+                        <span className="text-[10px] text-slate-400 font-medium">Connect every</span>
+                        <input
+                          type="number"
+                          value={cadenceDays || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val !== "") {
+                              const num = parseInt(val);
+                              if (!isNaN(num) && num > 0) setCadenceDays(num);
+                            } else {
+                              setCadenceDays(0);
+                            }
+                          }}
+                          min="1"
+                          className="w-16 px-2.5 py-1 bg-[#111827] border border-slate-700 rounded-lg text-white text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                        />
+                        <span className="text-[10px] text-slate-400 font-medium">days</span>
                       </div>
                     )}
                   </div>
 
+                  {/* Side-by-Side City/Country Location */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        📍 City (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="e.g. San Francisco"
+                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        Country (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        placeholder="e.g. United States"
+                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Side-by-Side Birthday Month/Day selects */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        🎂 Month (Optional)
+                      </label>
+                      <select
+                        value={birthdayMonth}
+                        onChange={(e) => {
+                          setBirthdayMonth(e.target.value);
+                          if (!e.target.value) setBirthdayDay("");
+                        }}
+                        className="w-full px-2.5 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      >
+                        <option value="">Month</option>
+                        {MONTHS.map((m) => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        Day (Optional)
+                      </label>
+                      <select
+                        value={birthdayDay}
+                        onChange={(e) => setBirthdayDay(e.target.value)}
+                        disabled={!birthdayMonth}
+                        className="w-full px-2.5 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40"
+                      >
+                        <option value="">Day</option>
+                        {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
+                          <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Side-by-Side Optional phone/email */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        Phone (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+1 (555) 000-0000"
+                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        Email (Optional)
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="example@email.com"
+                        className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Optional notes */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Notes (Optional)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={2}
+                      placeholder="e.g. Prefers FaceTime, ask about their new project..."
+                      className="w-full px-3 py-2 bg-[#111827] border border-slate-700/80 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder-slate-700"
+                    />
+                  </div>
+
+                  {/* Non-wrapping, fully padded Add button */}
                   <button
                     type="submit"
                     disabled={saving || !name.trim()}
-                    className="w-full h-12 flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white rounded-full font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(6,182,212,0.15)] mt-4 cursor-pointer"
+                    className="w-full h-11 flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white rounded-full font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(6,182,212,0.15)] cursor-pointer py-2.5 px-6 shrink-0"
                   >
                     {saving ? (
                       <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -472,9 +477,9 @@ export default function OnboardingPage() {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                     ) : (
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 whitespace-nowrap text-sm tracking-wide">
                         Add to Circle
-                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
                       </span>
@@ -484,19 +489,19 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Right Column: Added Contacts Summary list */}
-            <div className="flex-1 flex flex-col border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-6 lg:pt-0 lg:pl-6 overflow-hidden">
-              <h4 className="text-sm font-bold text-white mb-3 flex items-center justify-between shrink-0">
-                <span>Your Circle</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400">
-                  {contacts.length} added
+            {/* Right Column: Clean, simple styled Sidebar list */}
+            <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-6 lg:pt-0 lg:pl-6 flex flex-col overflow-hidden max-h-[58vh]">
+              <h4 className="text-xs font-bold text-white mb-3 flex items-center justify-between shrink-0">
+                <span>Added Connections</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-cyan-400 font-semibold">
+                  {contacts.length} total
                 </span>
               </h4>
 
               {contacts.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center bg-slate-900/20 border border-dashed border-slate-800 rounded-2xl p-6 text-center animate-fadeIn">
-                  <p className="text-xs text-slate-500 max-w-[200px] leading-relaxed">
-                    No one added yet. Type a name and click Add to begin.
+                <div className="flex-1 flex items-center justify-center bg-slate-900/10 border border-dashed border-slate-800/80 rounded-2xl p-6 text-center animate-fadeIn min-h-[100px] lg:min-h-0">
+                  <p className="text-[10px] text-slate-500 max-w-[150px] leading-relaxed">
+                    No contacts configured yet. Use the form on the left to add someone.
                   </p>
                 </div>
               ) : (
@@ -504,27 +509,32 @@ export default function OnboardingPage() {
                   {contacts.map((contact) => (
                     <div
                       key={contact.id}
-                      className="bg-[#111827]/40 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-3 flex justify-between items-center transition-all duration-200 animate-scaleUp"
+                      className="bg-[#111827]/40 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-2.5 flex justify-between items-center transition-all duration-200 animate-scaleUp"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-cyan-400 border border-cyan-500/10 text-sm">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-cyan-400 border border-cyan-500/10 text-xs shrink-0">
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <h5 className="font-bold text-white text-xs leading-none mb-1">{contact.name}</h5>
-                          <span className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-900 rounded-full border border-slate-800">
-                            {contact.relationship}
-                          </span>
+                        <div className="min-w-0">
+                          <h5 className="font-bold text-white text-[11px] leading-none mb-1 truncate">{contact.name}</h5>
+                          <div className="flex gap-1">
+                            <span className="text-[9px] text-slate-400 font-semibold px-1.5 py-0.2 bg-slate-900 rounded border border-slate-800 leading-none">
+                              {contact.relationship}
+                            </span>
+                            <span className="text-[9px] text-cyan-400 font-semibold px-1.5 py-0.2 bg-slate-900 rounded border border-slate-800 leading-none">
+                              {contact.cadence_days}d
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Circle Red Trash Button */}
+                      {/* Small, clean circular trash button */}
                       <button
                         onClick={() => handleDeleteContact(contact.id!)}
-                        className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-white border border-red-500/30 rounded-full hover:border-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 border border-slate-800 hover:border-red-500/20 rounded-full hover:bg-red-500/5 transition-all duration-200 cursor-pointer shrink-0"
                         title="Remove Contact"
                       >
-                        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                         </svg>
                       </button>
@@ -536,251 +546,41 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 3: SET RHYTHMS / CADENCES */}
-        {step === "cadence" && (
-          <div className="flex-1 flex flex-col overflow-hidden animate-fadeIn">
-            <div className="text-center max-w-md mx-auto mb-6 shrink-0">
-              <h3 className="text-lg font-bold text-white mb-1">Set Connection Rhythm</h3>
-              <p className="text-xs text-slate-400 leading-normal">
-                We've suggested starting frequencies based on relationship type. Adjust any cadence below:
-              </p>
+        {/* STEP 3: SIMPLE DONE SCREEN */}
+        {step === "done" && (
+          <div className="flex flex-col items-center justify-center text-center py-10 max-w-sm mx-auto my-auto animate-scaleUp">
+            <div className="w-14 h-14 rounded-full bg-cyan-950 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-2xl mb-6 shadow-[0_0_20px_rgba(6,182,212,0.1)] shrink-0">
+              ✓
             </div>
-
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-              {contacts.map((contact) => (
-                <div key={contact.id} className="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-4 space-y-3 animate-scaleUp">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-cyan-400 border border-cyan-500/10 text-xs">
-                      {contact.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-xs mb-0.5">{contact.name}</h4>
-                      <span className="text-[10px] text-slate-400">
-                        {contact.relationship}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { label: "Weekly", days: 7 },
-                      { label: "Bi-weekly", days: 14 },
-                      { label: "Monthly", days: 30 },
-                      { label: "Quarterly", days: 90 },
-                    ].map((preset) => {
-                      const isSelected = contact.cadence_days === preset.days;
-                      return (
-                        <button
-                          key={preset.days}
-                          type="button"
-                          onClick={() => handleUpdateCadence(contact.id!, preset.days)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
-                            isSelected
-                              ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                              : "bg-[#111827] border-gray-700/85 text-slate-300 hover:border-slate-600 hover:text-white"
-                          }`}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const currentCad = contact.cadence_days;
-                        if ([7, 14, 30, 90].includes(currentCad)) {
-                          handleUpdateCadence(contact.id!, 45); // Default custom days set to 45
-                        }
-                      }}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
-                        ![7, 14, 30, 90].includes(contact.cadence_days)
-                          ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                          : "bg-[#111827] border-gray-700/85 text-slate-300 hover:border-slate-600 hover:text-white"
-                      }`}
-                    >
-                      Custom
-                    </button>
-                  </div>
-
-                  {/* Inline custom numerical input */}
-                  {![7, 14, 30, 90].includes(contact.cadence_days) && (
-                    <div className="flex items-center gap-2 animate-fadeIn pl-1">
-                      <span className="text-[10px] text-slate-400 font-medium">Connect every</span>
-                      <input
-                        type="number"
-                        value={contact.cadence_days || ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val !== "") {
-                            const num = parseInt(val);
-                            if (!isNaN(num) && num > 0) {
-                              handleUpdateCadence(contact.id!, num);
-                            }
-                          } else {
-                            handleUpdateCadence(contact.id!, 0);
-                          }
-                        }}
-                        min="1"
-                        className="w-16 px-2.5 py-1 bg-[#111827] border border-slate-700 rounded-lg text-white text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                      />
-                      <span className="text-[10px] text-slate-400 font-medium">days</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: BIRTHDAYS & TIME ZONES */}
-        {step === "details" && (
-          <div className="flex-1 flex flex-col overflow-hidden animate-fadeIn">
-            <div className="text-center max-w-md mx-auto mb-6 shrink-0">
-              <h3 className="text-lg font-bold text-white mb-1">Birthdays & Time Zones</h3>
-              <p className="text-xs text-slate-400 leading-normal">
-                Add optional details to receive birthday reminders and see what time it is in their city.
-              </p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-              {contacts.map((contact) => {
-                const parsedBday = parseBirthday(contact.birthday);
-                return (
-                  <div key={contact.id} className="bg-slate-900/30 border border-slate-800/80 rounded-2xl p-4 space-y-4 animate-scaleUp">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-cyan-400 border border-cyan-500/10 text-xs">
-                        {contact.name.charAt(0).toUpperCase()}
-                      </div>
-                      <h4 className="font-bold text-white text-xs">{contact.name}</h4>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Birthday Grid Dropdowns */}
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          🎂 Birthday (Optional)
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <select
-                            value={parsedBday.month}
-                            onChange={(e) => {
-                              const m = e.target.value;
-                              const d = parsedBday.day;
-                              handleUpdateBirthday(contact.id!, m, m ? d : "");
-                            }}
-                            className="w-full px-2 py-1.5 bg-[#111827] border border-slate-700/80 rounded-lg text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                          >
-                            <option value="">Month</option>
-                            {MONTHS.map((m) => (
-                              <option key={m.value} value={m.value}>{m.label}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={parsedBday.day}
-                            onChange={(e) => {
-                              const d = e.target.value;
-                              handleUpdateBirthday(contact.id!, parsedBday.month, d);
-                            }}
-                            disabled={!parsedBday.month}
-                            className="w-full px-2 py-1.5 bg-[#111827] border border-slate-700/80 rounded-lg text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-cyan-500 disabled:opacity-40"
-                          >
-                            <option value="">Day</option>
-                            {parsedBday.month && getDaysInMonth(parsedBday.month).map((d) => (
-                              <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* City/Country Fields */}
-                      <div>
-                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          📍 Location (Optional)
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={contact.city || ""}
-                            onChange={(e) => handleUpdateDetails(contact.id!, { city: e.target.value.trim() || undefined })}
-                            placeholder="City"
-                            className="w-full px-3 py-1.5 bg-[#111827] border border-slate-700/80 rounded-lg text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder-slate-700"
-                          />
-                          <input
-                            type="text"
-                            value={contact.country || ""}
-                            onChange={(e) => handleUpdateDetails(contact.id!, { country: e.target.value.trim() || undefined })}
-                            placeholder="Country"
-                            className="w-full px-3 py-1.5 bg-[#111827] border border-slate-700/80 rounded-lg text-white text-[11px] focus:outline-none focus:ring-1 focus:ring-cyan-500 placeholder-slate-700"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 5: CELEBRATION SCREEN */}
-        {step === "celebrate" && (
-          <div className="flex flex-col items-center justify-center text-center py-6 max-w-md mx-auto my-auto animate-scaleUp">
-            <div className="text-5xl mb-6 animate-bounce">🎉</div>
-            <h3 className="text-2xl font-black text-white mb-2">Setup Complete!</h3>
-            <p className="text-slate-400 text-xs max-w-sm mx-auto mb-6 leading-relaxed">
-              You have established <strong>{contacts.length} circle connections</strong>. We will keep track of your cadences and tell you exactly when to stay in touch.
+            <h3 className="text-xl font-bold text-white mb-2">Setup Complete!</h3>
+            <p className="text-slate-400 text-xs leading-relaxed mb-8">
+              You have successfully configured <strong>{contacts.length} connection{contacts.length !== 1 ? 's' : ''}</strong> in your inner circle. We will start tracking your connection schedules right away.
             </p>
-
-            {/* Quick mini-bubbles showing circle list */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mb-8 max-w-sm mx-auto">
-              {contacts.map((c) => (
-                <div
-                  key={c.id}
-                  className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-[10px] font-bold text-slate-300 flex items-center gap-1.5"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                  {c.name}
-                </div>
-              ))}
-            </div>
 
             <button
               onClick={handleFinish}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-full font-bold shadow-[0_4px_25px_rgba(6,182,212,0.3)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.45)] transition-all duration-300 flex items-center gap-2 group cursor-pointer"
+              className="px-8 py-3.5 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-full font-bold shadow-[0_4px_20px_rgba(6,182,212,0.2)] transition-all duration-200 cursor-pointer text-sm"
             >
               Enter Dashboard
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
             </button>
           </div>
         )}
 
-        {/* Tactile Navigation Footer Buttons */}
-        {step !== "welcome" && step !== "celebrate" && (
+        {/* Minimal Navigation Footer */}
+        {step === "setup" && (
           <div className="mt-6 pt-5 border-t border-slate-800/80 flex justify-between items-center shrink-0">
-            {/* Tactile Circular Back Button */}
             <button
-              onClick={handlePrevStep}
-              className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white border border-slate-700/80 rounded-full hover:border-slate-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
-              title="Back"
+              onClick={() => setStep("welcome")}
+              className="px-5 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
+              Back to Intro
             </button>
-
-            {/* Tactile Circular Next Button */}
             <button
-              onClick={handleNextStep}
-              disabled={step === "contacts" && contacts.length === 0}
-              className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/40 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
-              title={step === "details" ? "Finish" : "Next"}
+              onClick={() => setStep("done")}
+              disabled={contacts.length === 0}
+              className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-full font-bold shadow-md shadow-cyan-950/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-xs"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
+              Finish Setup
             </button>
           </div>
         )}
