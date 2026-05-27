@@ -213,7 +213,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-center items-center py-6 px-4 relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-center items-center py-3 sm:py-6 px-4 relative overflow-hidden select-none">
       {/* Low-opacity subtle glowing backdrops */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
@@ -252,14 +252,14 @@ export default function OnboardingPage() {
         {/* STEP 2: SPACIOUS VERTICAL SETUP */}
         {step === "setup" && (
           <div className="flex-1 flex flex-col overflow-hidden animate-fadeIn justify-between">
-            {/* Scrollable Single Column Wrapper */}
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[62vh] space-y-8">
+            {/* Scrollable Single Column Wrapper with Safe Horizontal Padding to prevent cut-offs */}
+            <div className="flex-1 overflow-y-auto px-4 pr-3 custom-scrollbar max-h-[62vh] space-y-8">
               
               {/* Form Section */}
               <div>
                 <h3 className="text-base font-bold text-white mb-0.5">Configure Contact</h3>
                 <p className="text-[11px] text-slate-400 mb-5">
-                  Configure connections one by one. All optional details are shown below.
+                  Configure connections one by one. All details are shown below.
                 </p>
 
                 <form onSubmit={handleAddContact} className="space-y-4">
@@ -269,7 +269,7 @@ export default function OnboardingPage() {
                     </div>
                   )}
 
-                  {/* Name Input */}
+                  {/* Name Input - Required (*) */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Name *
@@ -284,7 +284,7 @@ export default function OnboardingPage() {
                     />
                   </div>
 
-                  {/* Relationship quick selector */}
+                  {/* Relationship selection */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Relationship
@@ -318,7 +318,7 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  {/* Unified Cadence presets selector */}
+                  {/* Unified Cadence Selector */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Cadence (how often to connect)
@@ -387,11 +387,11 @@ export default function OnboardingPage() {
                     )}
                   </div>
 
-                  {/* Side-by-Side Location fields */}
+                  {/* Side-by-Side Location fields - Removed "optional" text */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        City (optional)
+                        City
                       </label>
                       <input
                         type="text"
@@ -403,7 +403,7 @@ export default function OnboardingPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Country (optional)
+                        Country
                       </label>
                       <input
                         type="text"
@@ -415,10 +415,10 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
-                  {/* Birthday select fields - Grouped matching Home page Add modal */}
+                  {/* Birthday select fields - Removed "optional" text */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Birthday (optional)
+                      Birthday
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <select
@@ -448,11 +448,11 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
-                  {/* Side-by-Side Optional phone/email fields */}
+                  {/* Side-by-Side Phone/Email fields - Removed "optional" text */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Phone (optional)
+                        Phone
                       </label>
                       <input
                         type="tel"
@@ -464,7 +464,7 @@ export default function OnboardingPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Email (optional)
+                        Email
                       </label>
                       <input
                         type="email"
@@ -476,10 +476,10 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
-                  {/* Notes Field */}
+                  {/* Notes Field - Removed "optional" text */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Notes (optional)
+                      Notes
                     </label>
                     <textarea
                       value={notes}

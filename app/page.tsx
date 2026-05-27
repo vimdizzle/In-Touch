@@ -1489,7 +1489,7 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                          Phone (optional)
+                          Phone
                         </label>
                         <input
                           type="tel"
@@ -1501,7 +1501,7 @@ export default function Home() {
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                          Email (optional)
+                          Email
                         </label>
                         <input
                           type="email"
@@ -1555,7 +1555,7 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                          City (optional)
+                          City
                         </label>
                         <input
                           type="text"
@@ -1567,7 +1567,7 @@ export default function Home() {
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                          Country (optional)
+                          Country
                         </label>
                         <input
                           type="text"
@@ -1581,7 +1581,7 @@ export default function Home() {
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Birthday (optional)
+                        Birthday
                       </label>
                       <div className="grid grid-cols-2 gap-3">
                         <select
@@ -1620,7 +1620,7 @@ export default function Home() {
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Notes (optional)
+                        Notes
                       </label>
                       <textarea
                         value={editNotes}
@@ -1854,7 +1854,7 @@ export default function Home() {
                                       onChange={(e) => setEditTouchpointNote(e.target.value)}
                                       rows={2}
                                       className="w-full px-3 py-1.5 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 text-xs"
-                                      placeholder="Optional notes..."
+                                      placeholder="Notes..."
                                     />
                                   </div>
                                   <div className="flex gap-2 justify-end">
@@ -2251,7 +2251,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Phone (optional)
+                      Phone
                     </label>
                     <input
                       type="tel"
@@ -2263,7 +2263,7 @@ export default function Home() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Email (optional)
+                      Email
                     </label>
                     <input
                       type="email"
@@ -2317,7 +2317,7 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      City (optional)
+                      City
                     </label>
                     <input
                       type="text"
@@ -2329,7 +2329,7 @@ export default function Home() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Country (optional)
+                      Country
                     </label>
                     <input
                       type="text"
@@ -2344,7 +2344,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Birthday (optional)
+                      Birthday
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <select
@@ -2382,7 +2382,7 @@ export default function Home() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Last Contact Date (optional)
+                      Last Contact Date
                     </label>
                     <input
                       type="date"
@@ -2395,7 +2395,7 @@ export default function Home() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Notes (optional)
+                    Notes
                   </label>
                   <textarea
                     value={addNotes}
@@ -2648,7 +2648,7 @@ export default function Home() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Notes (optional)
+                    Notes
                   </label>
                   <textarea
                     value={logNote}
