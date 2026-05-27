@@ -68,16 +68,17 @@ export default function OnboardingPage() {
   // Onboarding Sidebar Search State
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Unified Form state for one contact at a time
+  // Unified Form state matching Add Contact form in app/page.tsx exactly
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("Friend");
   const [cadenceDays, setCadenceDays] = useState(30);
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [birthdayMonth, setBirthdayMonth] = useState("");
   const [birthdayDay, setBirthdayDay] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [lastTouchpointDate, setLastTouchpointDate] = useState("");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -132,19 +133,38 @@ export default function OnboardingPage() {
 
       if (error) throw error;
 
+      // If last touchpoint date is provided, create a touchpoint
+      if (lastTouchpointDate) {
+        const { error: touchpointError } = await supabase
+          .from("touchpoints")
+          .insert([
+            {
+              contact_id: data.id,
+              channel: "other",
+              contact_date: lastTouchpointDate,
+              note: "Initial touchpoint",
+            },
+          ]);
+
+        if (touchpointError) {
+          console.error("Error creating touchpoint:", touchpointError);
+        }
+      }
+
       // Stage contact instantly to list
       setContacts([data, ...contacts]);
       
-      // Reset Unified Setup Form completely
+      // Reset Setup Form completely
       setName("");
       setRelationship("Friend");
       setCadenceDays(30);
+      setPhone("");
+      setEmail("");
       setCity("");
       setCountry("");
       setBirthdayMonth("");
       setBirthdayDay("");
-      setPhone("");
-      setEmail("");
+      setLastTouchpointDate("");
       setNotes("");
     } catch (err: any) {
       setError(err.message || "Failed to add contact");
@@ -177,12 +197,13 @@ export default function OnboardingPage() {
     setName("");
     setRelationship("Friend");
     setCadenceDays(30);
+    setPhone("");
+    setEmail("");
     setCity("");
     setCountry("");
     setBirthdayMonth("");
     setBirthdayDay("");
-    setPhone("");
-    setEmail("");
+    setLastTouchpointDate("");
     setNotes("");
   };
 
@@ -213,13 +234,13 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-center items-center py-3 sm:py-6 px-4 relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#020617] text-white flex flex-col justify-start sm:justify-center items-center py-2 sm:py-6 px-4 relative overflow-hidden select-none">
       {/* Low-opacity subtle glowing backdrops */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
 
       {/* Main unified onboarding container */}
-      <main className="w-full max-w-2xl bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl flex flex-col justify-between min-h-[500px] max-h-[90vh]">
+      <main className="w-full max-w-2xl bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-4 sm:p-10 shadow-2xl flex flex-col justify-between min-h-[500px] max-h-[92vh]">
         
         {/* STEP 1: WELCOME INTRO */}
         {step === "welcome" && (
@@ -252,14 +273,14 @@ export default function OnboardingPage() {
         {/* STEP 2: SPACIOUS VERTICAL SETUP */}
         {step === "setup" && (
           <div className="flex-1 flex flex-col overflow-hidden animate-fadeIn justify-between">
-            {/* Scrollable Single Column Wrapper with Safe Horizontal Padding to prevent cut-offs */}
+            {/* Scrollable Single Column Wrapper with Safe Padding to prevent cut-offs */}
             <div className="flex-1 overflow-y-auto px-4 pr-3 custom-scrollbar max-h-[62vh] space-y-8">
               
-              {/* Form Section */}
+              {/* Form Section - Matches Add Contact fields exactly */}
               <div>
-                <h3 className="text-base font-bold text-white mb-0.5">Configure Contact</h3>
+                <h3 className="text-base font-bold text-white mb-0.5">Onboard Contacts</h3>
                 <p className="text-[11px] text-slate-400 mb-5">
-                  Configure connections one by one. All details are shown below.
+                  Add the people in your circle. Form fields match the Add Contact dashboard modal exactly.
                 </p>
 
                 <form onSubmit={handleAddContact} className="space-y-4">
@@ -279,32 +300,16 @@ export default function OnboardingPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      placeholder="e.g. Mom, Jane Doe, David"
-                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500 transition-all"
+                      placeholder="John Doe"
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                     />
                   </div>
 
-                  {/* Relationship selection */}
+                  {/* Relationship selector */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Relationship
                     </label>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {["Parent", "Sibling", "Friend", "Family", "Coworker"].map((rel) => (
-                        <button
-                          key={rel}
-                          type="button"
-                          onClick={() => setRelationship(rel)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
-                            relationship === rel
-                              ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                              : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
-                          }`}
-                        >
-                          {rel}
-                        </button>
-                      ))}
-                    </div>
                     <select
                       value={relationship}
                       onChange={(e) => setRelationship(e.target.value)}
@@ -318,138 +323,8 @@ export default function OnboardingPage() {
                     </select>
                   </div>
 
-                  {/* Unified Cadence Selector */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Cadence (how often to connect)
-                    </label>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {[
-                        { label: "Weekly", days: 7 },
-                        { label: "Bi-weekly", days: 14 },
-                        { label: "Monthly", days: 30 },
-                        { label: "Quarterly", days: 90 },
-                      ].map((preset) => {
-                        const isSelected = cadenceDays === preset.days;
-                        return (
-                          <button
-                            key={preset.days}
-                            type="button"
-                            onClick={() => setCadenceDays(preset.days)}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
-                              isSelected
-                                ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                                : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
-                            }`}
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if ([7, 14, 30, 90].includes(cadenceDays)) {
-                            setCadenceDays(45); // Set custom to 45 by default when toggled
-                          }
-                        }}
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200 cursor-pointer ${
-                          ![7, 14, 30, 90].includes(cadenceDays)
-                            ? "bg-cyan-500 border-cyan-500 text-white shadow-md shadow-cyan-950/20"
-                            : "bg-[#111827] border-gray-700 text-slate-300 hover:border-gray-600 hover:text-white"
-                        }`}
-                      >
-                        Custom
-                      </button>
-                    </div>
-
-                    {/* Inline custom numerical input */}
-                    {![7, 14, 30, 90].includes(cadenceDays) && (
-                      <div className="flex items-center gap-2 animate-fadeIn mt-1 pl-1">
-                        <span className="text-[10px] text-slate-400 font-medium">Connect every</span>
-                        <input
-                          type="number"
-                          value={cadenceDays || ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val !== "") {
-                              const num = parseInt(val);
-                              if (!isNaN(num) && num > 0) setCadenceDays(num);
-                            } else {
-                              setCadenceDays(0);
-                            }
-                          }}
-                          min="1"
-                          className="w-16 px-2.5 py-1 bg-[#111827] border border-gray-700 rounded-md text-white text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                        />
-                        <span className="text-[10px] text-slate-400 font-medium">days</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Side-by-Side Location fields - Removed "optional" text */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="e.g. San Jose"
-                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        placeholder="e.g. United States"
-                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Birthday select fields - Removed "optional" text */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      Birthday
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <select
-                        value={birthdayMonth}
-                        onChange={(e) => {
-                          setBirthdayMonth(e.target.value);
-                          if (!e.target.value) setBirthdayDay("");
-                        }}
-                        className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-                      >
-                        <option value="">Month</option>
-                        {MONTHS.map((m) => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={birthdayDay}
-                        onChange={(e) => setBirthdayDay(e.target.value)}
-                        disabled={!birthdayMonth}
-                        className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm disabled:opacity-40"
-                      >
-                        <option value="">Day</option>
-                        {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
-                          <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Side-by-Side Phone/Email fields - Removed "optional" text */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Phone & Email Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                         Phone
@@ -458,8 +333,8 @@ export default function OnboardingPage() {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                         placeholder="+1 (555) 000-0000"
-                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
                       />
                     </div>
                     <div>
@@ -470,13 +345,158 @@ export default function OnboardingPage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                         placeholder="example@email.com"
-                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
                       />
                     </div>
                   </div>
 
-                  {/* Notes Field - Removed "optional" text */}
+                  {/* Cadence Selector - Custom button hidden unless selected */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      Cadence
+                    </label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {[
+                        { label: "Weekly", days: 7 },
+                        { label: "Monthly", days: 30 },
+                        { label: "Quarterly", days: 90 },
+                        { label: "Yearly", days: 365 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          onClick={() => setCadenceDays(preset.days)}
+                          className={`px-3 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
+                            cadenceDays === preset.days
+                              ? "bg-cyan-500 border-cyan-500 text-white"
+                              : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ([7, 30, 90, 365].includes(cadenceDays)) {
+                            setCadenceDays(45); // Set custom default to 45
+                          }
+                        }}
+                        className={`px-3 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
+                          ![7, 30, 90, 365].includes(cadenceDays)
+                            ? "bg-cyan-500 border-cyan-500 text-white"
+                            : "bg-[#111827] border-gray-700 text-gray-300 hover:border-gray-600"
+                        }`}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                    
+                    {/* Custom days input field - ONLY shown when Custom is selected */}
+                    {![7, 30, 90, 365].includes(cadenceDays) && (
+                      <div className="flex items-center gap-2 animate-fadeIn mt-2">
+                        <input
+                          type="number"
+                          value={cadenceDays}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "") setCadenceDays(0);
+                            else {
+                              const num = parseInt(val);
+                              if (!isNaN(num) && num > 0) setCadenceDays(num);
+                            }
+                          }}
+                          min="1"
+                          className="w-24 px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                        />
+                        <span className="text-gray-400 text-sm">days</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* City & Country Location Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="San Jose"
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        placeholder="United States"
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Birthday & Last Contact Date Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Birthday
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={birthdayMonth}
+                          onChange={(e) => {
+                            setBirthdayMonth(e.target.value);
+                            if (e.target.value) {
+                              const days = getDaysInMonth(e.target.value);
+                              if (birthdayDay && parseInt(birthdayDay) > days.length) {
+                                setBirthdayDay("");
+                              }
+                            } else {
+                              setBirthdayDay("");
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                        >
+                          <option value="">Month</option>
+                          {MONTHS.map((m) => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={birthdayDay}
+                          onChange={(e) => setBirthdayDay(e.target.value)}
+                          disabled={!birthdayMonth}
+                          className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm disabled:opacity-50"
+                        >
+                          <option value="">Day</option>
+                          {birthdayMonth && getDaysInMonth(birthdayMonth).map((d) => (
+                            <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Last Contact Date
+                      </label>
+                      <input
+                        type="date"
+                        value={lastTouchpointDate}
+                        onChange={(e) => setLastTouchpointDate(e.target.value)}
+                        className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes Field */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       Notes
@@ -485,15 +505,15 @@ export default function OnboardingPage() {
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={2}
-                      placeholder="e.g. Prefers WhatsApp, ask about new dog..."
-                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm placeholder-gray-500"
+                      placeholder="Notes..."
+                      className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                     />
                   </div>
 
                   {/* Form Actions - Circular Icon buttons aligned to bottom-right */}
                   <div className="flex justify-end gap-3 pt-2">
                     {/* Clear/Cancel Button */}
-                    {(name || relationship !== "Friend" || cadenceDays !== 30 || city || country || birthdayMonth || phone || email || notes) && (
+                    {(name || relationship !== "Friend" || cadenceDays !== 30 || phone || email || city || country || birthdayMonth || lastTouchpointDate || notes) && (
                       <button
                         type="button"
                         onClick={handleClearForm}
