@@ -150,19 +150,23 @@ export default function Home() {
       window.location.search.includes("code=")
     );
 
-    // Fail-safe timeout: if we are in an OAuth callback but it takes more than 2.5 seconds,
-    // assume the token is expired/invalid and gracefully redirect to /auth so we don't get stuck!
+    if (isOAuthCallback) {
+      console.log("OAuth callback detected on main page, waiting for session...");
+    }
+
+    // Fail-safe timeout: extended to 8 seconds for OAuth callbacks
     const fallbackTimer = setTimeout(() => {
       if (isOAuthCallback && loading) {
-        console.warn("OAuth callback took too long or token is expired. Redirecting to /auth.");
+        console.warn("OAuth callback took too long. Redirecting to /auth.");
         router.push("/auth");
         setLoading(false);
       }
-    }, 2500);
+    }, 8000);
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         clearTimeout(fallbackTimer);
+        console.log("Session found for user:", session.user.email);
         setUser(session.user);
         await loadContacts(session.user.id);
         setLoading(false);
@@ -176,6 +180,7 @@ export default function Home() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("Auth state change on main page:", _event);
       if (session) {
         clearTimeout(fallbackTimer);
         setUser(session.user);
@@ -192,7 +197,8 @@ export default function Home() {
       clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
-  }, [router, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
 
   const loadContacts = async (userId: string) => {
     try {

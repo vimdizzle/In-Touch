@@ -71,11 +71,14 @@ export default function AuthPage() {
     setLoading(true);
     setError("");
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log("Google OAuth redirectTo:", redirectUrl);
+      
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           scopes: "https://www.googleapis.com/auth/contacts.readonly",
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
 
@@ -83,7 +86,6 @@ export default function AuthPage() {
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google.");
       console.error("Google Auth Error:", err);
-    } finally {
       setLoading(false);
     }
   };
