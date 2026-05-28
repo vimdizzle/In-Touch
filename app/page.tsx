@@ -143,30 +143,56 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // If we are currently handling an OAuth redirect hash (containing access_token),
+    // let Supabase's client-side listener handle it and do NOT immediately redirect to /auth!
+    const isOAuthCallback = typeof window !== "undefined" && (
+      window.location.hash.includes("access_token") || 
+      window.location.search.includes("code=")
+    );
+
+    // Fail-safe timeout: if we are in an OAuth callback but it takes more than 2.5 seconds,
+    // assume the token is expired/invalid and gracefully redirect to /auth so we don't get stuck!
+    const fallbackTimer = setTimeout(() => {
+      if (isOAuthCallback && loading) {
+        console.warn("OAuth callback took too long or token is expired. Redirecting to /auth.");
+        router.push("/auth");
+        setLoading(false);
+      }
+    }, 2500);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
+        clearTimeout(fallbackTimer);
         setUser(session.user);
         await loadContacts(session.user.id);
-      } else {
+        setLoading(false);
+      } else if (!isOAuthCallback) {
+        clearTimeout(fallbackTimer);
         router.push("/auth");
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
+        clearTimeout(fallbackTimer);
         setUser(session.user);
         await loadContacts(session.user.id);
-      } else {
+        setLoading(false);
+      } else if (!isOAuthCallback) {
+        clearTimeout(fallbackTimer);
         router.push("/auth");
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, [router]);
+    return () => {
+      clearTimeout(fallbackTimer);
+      subscription.unsubscribe();
+    };
+  }, [router, loading]);
 
   const loadContacts = async (userId: string) => {
     try {
