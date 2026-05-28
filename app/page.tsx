@@ -22,6 +22,7 @@ import VCardImportReviewModal from "@/app/components/VCardImportReviewModal";
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authDebug, setAuthDebug] = useState<string>("");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -166,20 +167,24 @@ export default function Home() {
     }, 10000);
 
     const initSession = async () => {
+      try {
       // PKCE flow: if we have a ?code= param, exchange it for a session first
       if (authCode) {
         try {
+          setAuthDebug("Exchanging PKCE code...");
           console.log("Exchanging PKCE code for session...");
           const { data, error } = await supabase.auth.exchangeCodeForSession(authCode);
           if (error) {
             console.error("Code exchange failed:", error.message);
+            setAuthDebug(`Code exchange failed: ${error.message}`);
             clearTimeout(fallbackTimer);
-            router.push(`/auth?error=${encodeURIComponent(error.message)}`);
+            // Don't redirect, show the error for debugging
             setLoading(false);
             return;
           }
           if (data.session) {
             console.log("Session established for:", data.session.user.email);
+            setAuthDebug("Session established! Loading contacts...");
             clearTimeout(fallbackTimer);
             // Clean the URL so the code isn't visible / re-used
             window.history.replaceState({}, "", window.location.pathname);
@@ -188,10 +193,10 @@ export default function Home() {
             setLoading(false);
             return;
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error("Code exchange error:", err);
+          setAuthDebug(`Code exchange exception: ${err?.message || String(err)}`);
           clearTimeout(fallbackTimer);
-          router.push("/auth?error=code_exchange_failed");
           setLoading(false);
           return;
         }
@@ -208,6 +213,11 @@ export default function Home() {
       } else if (!isOAuthCallback) {
         clearTimeout(fallbackTimer);
         router.push("/auth");
+        setLoading(false);
+      }
+      } catch (outerErr: any) {
+        console.error("initSession outer error:", outerErr);
+        setAuthDebug(`Init error: ${outerErr?.message || String(outerErr)}`);
         setLoading(false);
       }
     };
@@ -1064,15 +1074,28 @@ export default function Home() {
     return contacts.find(c => c.id === expandedId) || null;
   }, [contacts, expandedId]);
 
-  if (loading) {
+  if (loading || (!user && authDebug)) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
         <div className="text-white flex flex-col items-center gap-3 animate-fadeIn">
-          <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-sm font-semibold tracking-wide text-gray-400">Loading...</span>
+          {loading && (
+            <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          )}
+          <span className="text-sm font-semibold tracking-wide text-gray-400">{loading ? "Loading..." : "Authentication"}</span>
+          {authDebug && (
+            <div className="mt-4 max-w-md text-center">
+              <p className="text-xs text-amber-400 font-mono break-all">{authDebug}</p>
+              <button
+                onClick={() => { setAuthDebug(""); window.location.href = "/auth"; }}
+                className="mt-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm transition-colors"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
