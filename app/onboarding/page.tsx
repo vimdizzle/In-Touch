@@ -250,11 +250,10 @@ export default function OnboardingPage() {
 
 
   useEffect(() => {
-    // If we are currently handling an OAuth redirect hash (containing access_token or error),
+    // If we are currently handling an OAuth redirect hash (containing access_token),
     // let Supabase's client-side listener handle it and do NOT immediately redirect to /auth!
     const isOAuthCallback = typeof window !== "undefined" && (
       window.location.hash.includes("access_token") || 
-      window.location.hash.includes("error") ||
       window.location.search.includes("code=")
     );
 
@@ -296,10 +295,11 @@ export default function OnboardingPage() {
         if (!error && data) {
           setContacts(data);
         }
+        setLoading(false);
       } else if (!isOAuthCallback) {
         router.push("/auth");
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
