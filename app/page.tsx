@@ -144,69 +144,35 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // If we are currently handling an OAuth redirect (containing code= or access_token),
-    // let Supabase's client-side listener handle it and do NOT immediately redirect to /auth!
-    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-    const authCode = urlParams?.get("code");
+    // Detect if this page load is an OAuth callback (PKCE code or hash fragment)
     const isOAuthCallback = typeof window !== "undefined" && (
       window.location.hash.includes("access_token") || 
-      !!authCode
+      window.location.search.includes("code=")
     );
 
     if (isOAuthCallback) {
-      console.log("OAuth callback detected on main page", authCode ? "(PKCE code)" : "(hash fragment)");
+      console.log("OAuth callback detected — letting Supabase handle code exchange automatically");
+      setAuthDebug("Processing authentication...");
+      // Clean the URL so the code isn't visible or accidentally re-used
+      window.history.replaceState({}, "", window.location.pathname);
     }
 
-    // Fail-safe timeout: extended to 10 seconds for OAuth callbacks
+    // Fail-safe timeout for OAuth callbacks
     const fallbackTimer = setTimeout(() => {
       if (isOAuthCallback && loading) {
-        console.warn("OAuth callback took too long. Redirecting to /auth.");
-        router.push("/auth");
+        console.warn("OAuth callback timed out after 12 seconds.");
+        setAuthDebug("Authentication timed out. Please try again.");
         setLoading(false);
       }
-    }, 10000);
+    }, 12000);
 
-    const initSession = async () => {
-      try {
-      // PKCE flow: if we have a ?code= param, exchange it for a session first
-      if (authCode) {
-        try {
-          setAuthDebug("Exchanging PKCE code...");
-          console.log("Exchanging PKCE code for session...");
-          const { data, error } = await supabase.auth.exchangeCodeForSession(authCode);
-          if (error) {
-            console.error("Code exchange failed:", error.message);
-            setAuthDebug(`Code exchange failed: ${error.message}`);
-            clearTimeout(fallbackTimer);
-            // Don't redirect, show the error for debugging
-            setLoading(false);
-            return;
-          }
-          if (data.session) {
-            console.log("Session established for:", data.session.user.email);
-            setAuthDebug("Session established! Loading contacts...");
-            clearTimeout(fallbackTimer);
-            // Clean the URL so the code isn't visible / re-used
-            window.history.replaceState({}, "", window.location.pathname);
-            setUser(data.session.user);
-            await loadContacts(data.session.user.id);
-            setLoading(false);
-            return;
-          }
-        } catch (err: any) {
-          console.error("Code exchange error:", err);
-          setAuthDebug(`Code exchange exception: ${err?.message || String(err)}`);
-          clearTimeout(fallbackTimer);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Normal flow: check for existing session
-      const { data: { session } } = await supabase.auth.getSession();
+    // Check for an existing session (works for normal page loads and 
+    // also picks up the session after Supabase's auto code exchange)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         clearTimeout(fallbackTimer);
         console.log("Session found for user:", session.user.email);
+        setAuthDebug("");
         setUser(session.user);
         await loadContacts(session.user.id);
         setLoading(false);
@@ -215,25 +181,22 @@ export default function Home() {
         router.push("/auth");
         setLoading(false);
       }
-      } catch (outerErr: any) {
-        console.error("initSession outer error:", outerErr);
-        setAuthDebug(`Init error: ${outerErr?.message || String(outerErr)}`);
-        setLoading(false);
-      }
-    };
+      // If isOAuthCallback but no session yet, Supabase is still processing 
+      // the code exchange — onAuthStateChange below will handle it
+    });
 
-    initSession();
-
+    // Listen for auth state changes (fires when Supabase finishes the PKCE exchange)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state change on main page:", _event);
+      console.log("Auth state change:", _event, session ? "has session" : "no session");
       if (session) {
         clearTimeout(fallbackTimer);
+        setAuthDebug("");
         setUser(session.user);
         await loadContacts(session.user.id);
         setLoading(false);
-      } else if (!isOAuthCallback) {
+      } else if (_event === "SIGNED_OUT") {
         clearTimeout(fallbackTimer);
         router.push("/auth");
         setLoading(false);
@@ -246,6 +209,7 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
 
   const loadContacts = async (userId: string) => {
     try {
