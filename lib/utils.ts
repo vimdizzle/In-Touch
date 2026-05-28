@@ -266,6 +266,98 @@ export const parseVCard = (vcardText: string): Array<{
   return contacts;
 };
 
+/**
+ * Common Interfaces & Types
+ */
+export interface Touchpoint {
+  id: string;
+  contact_id: string;
+  contact_date: string;
+  channel: string;
+  note?: string | null;
+  created_at?: string;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  relationship: string;
+  city?: string | null;
+  country?: string | null;
+  location?: string | null; // kept for backward compatibility
+  birthday?: string | null;
+  cadence_days: number;
+  last_contact_date?: string;
+  last_contact_channel?: string;
+  days_since_last_contact?: number;
+  status: "overdue" | "coming_up" | "on_track";
+  days_until_due?: number;
+  days_overdue?: number;
+  is_pinned?: boolean;
+  phone?: string | null;
+  email?: string | null;
+  notes?: string | null;
+  touchpoints?: Touchpoint[];
+}
+
+export interface ImportingContactDraft {
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  country?: string;
+  birthday?: string; // MM-DD
+  notes?: string;
+  relationship: string;
+  cadence_days: number;
+  selected: boolean;
+}
+
+/**
+ * Global Constants
+ */
+export const RELATIONSHIPS = [
+  "Friend",
+  "Family",
+  "Sibling",
+  "Parent",
+  "Coworker",
+  "Mentor",
+  "Other",
+];
+
+export const CADENCE_PRESETS = [
+  { label: "Weekly", days: 7 },
+  { label: "Monthly", days: 30 },
+  { label: "Quarterly", days: 90 },
+  { label: "Yearly", days: 365 },
+];
+
+export const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+/**
+ * Helper to get days count in a given month
+ */
+export const getDaysInMonth = (month: string): number[] => {
+  if (!month) return [];
+  const monthNum = parseInt(month);
+  const daysInMonth = new Date(2000, monthNum, 0).getDate(); // Using 2000 (leap year) for Feb 29
+  return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+};
+
 
 
 
