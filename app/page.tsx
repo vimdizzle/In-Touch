@@ -143,25 +143,35 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // If we are currently handling an OAuth redirect hash (containing access_token or error),
+    // let Supabase's client-side listener handle it and do NOT immediately redirect to /auth!
+    const isOAuthCallback = typeof window !== "undefined" && (
+      window.location.hash.includes("access_token") || 
+      window.location.hash.includes("error") ||
+      window.location.search.includes("code=")
+    );
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setUser(session.user);
         await loadContacts(session.user.id);
-      } else {
+        setLoading(false);
+      } else if (!isOAuthCallback) {
         router.push("/auth");
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         setUser(session.user);
-        loadContacts(session.user.id);
-      } else {
+        await loadContacts(session.user.id);
+      } else if (!isOAuthCallback) {
         router.push("/auth");
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
