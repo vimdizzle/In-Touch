@@ -143,27 +143,62 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // If we are currently handling an OAuth redirect hash (containing access_token),
+    // If we are currently handling an OAuth redirect (containing code= or access_token),
     // let Supabase's client-side listener handle it and do NOT immediately redirect to /auth!
+    const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const authCode = urlParams?.get("code");
     const isOAuthCallback = typeof window !== "undefined" && (
       window.location.hash.includes("access_token") || 
-      window.location.search.includes("code=")
+      !!authCode
     );
 
     if (isOAuthCallback) {
-      console.log("OAuth callback detected on main page, waiting for session...");
+      console.log("OAuth callback detected on main page", authCode ? "(PKCE code)" : "(hash fragment)");
     }
 
-    // Fail-safe timeout: extended to 8 seconds for OAuth callbacks
+    // Fail-safe timeout: extended to 10 seconds for OAuth callbacks
     const fallbackTimer = setTimeout(() => {
       if (isOAuthCallback && loading) {
         console.warn("OAuth callback took too long. Redirecting to /auth.");
         router.push("/auth");
         setLoading(false);
       }
-    }, 8000);
+    }, 10000);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const initSession = async () => {
+      // PKCE flow: if we have a ?code= param, exchange it for a session first
+      if (authCode) {
+        try {
+          console.log("Exchanging PKCE code for session...");
+          const { data, error } = await supabase.auth.exchangeCodeForSession(authCode);
+          if (error) {
+            console.error("Code exchange failed:", error.message);
+            clearTimeout(fallbackTimer);
+            router.push(`/auth?error=${encodeURIComponent(error.message)}`);
+            setLoading(false);
+            return;
+          }
+          if (data.session) {
+            console.log("Session established for:", data.session.user.email);
+            clearTimeout(fallbackTimer);
+            // Clean the URL so the code isn't visible / re-used
+            window.history.replaceState({}, "", window.location.pathname);
+            setUser(data.session.user);
+            await loadContacts(data.session.user.id);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Code exchange error:", err);
+          clearTimeout(fallbackTimer);
+          router.push("/auth?error=code_exchange_failed");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Normal flow: check for existing session
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         clearTimeout(fallbackTimer);
         console.log("Session found for user:", session.user.email);
@@ -175,7 +210,9 @@ export default function Home() {
         router.push("/auth");
         setLoading(false);
       }
-    });
+    };
+
+    initSession();
 
     const {
       data: { subscription },
