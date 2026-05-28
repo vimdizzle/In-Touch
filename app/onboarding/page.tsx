@@ -257,8 +257,19 @@ export default function OnboardingPage() {
       window.location.search.includes("code=")
     );
 
+    // Fail-safe timeout: if we are in an OAuth callback but it takes more than 2.5 seconds,
+    // assume the token is expired/invalid and gracefully redirect to /auth so we don't get stuck!
+    const fallbackTimer = setTimeout(() => {
+      if (isOAuthCallback && loading) {
+        console.warn("OAuth callback took too long or token is expired. Redirecting to /auth.");
+        router.push("/auth");
+        setLoading(false);
+      }
+    }, 2500);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
+        clearTimeout(fallbackTimer);
         setUser(session.user);
         
         // Load existing contacts
@@ -274,6 +285,7 @@ export default function OnboardingPage() {
         
         setLoading(false);
       } else if (!isOAuthCallback) {
+        clearTimeout(fallbackTimer);
         router.push("/auth");
         setLoading(false);
       }
@@ -283,6 +295,7 @@ export default function OnboardingPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
+        clearTimeout(fallbackTimer);
         setUser(session.user);
         
         // Load existing contacts
@@ -297,13 +310,17 @@ export default function OnboardingPage() {
         }
         setLoading(false);
       } else if (!isOAuthCallback) {
+        clearTimeout(fallbackTimer);
         router.push("/auth");
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [router]);
+    return () => {
+      clearTimeout(fallbackTimer);
+      subscription.unsubscribe();
+    };
+  }, [router, loading]);
 
 
 
