@@ -71,14 +71,11 @@ export default function AuthPage() {
     setLoading(true);
     setError("");
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log("Google OAuth redirectTo:", redirectUrl);
-      
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           scopes: "https://www.googleapis.com/auth/contacts.readonly",
-          redirectTo: redirectUrl,
+          redirectTo: window.location.origin,
         },
       });
 
