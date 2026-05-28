@@ -18,6 +18,64 @@ import VCardImportReviewModal from "@/app/components/VCardImportReviewModal";
 
 type OnboardingStep = "welcome" | "setup" | "done";
 
+const SANDBOX_GOOGLE_CONTACTS: ImportingContactDraft[] = [
+  {
+    name: "Grace Hopper",
+    relationship: "Mentor",
+    cadence_days: 7,
+    phone: "+1 (555) 1947-0909",
+    email: "grace.hopper@navy.mil",
+    city: "Arlington",
+    country: "United States",
+    notes: "Amazing computer scientist. Remind me to ask about compiler design, COBOL, and the first computer bug.",
+    selected: true,
+  },
+  {
+    name: "Alan Turing",
+    relationship: "Mentor",
+    cadence_days: 30,
+    phone: "+44 7700 900077",
+    email: "alan.turing@bletchley.org.uk",
+    city: "London",
+    country: "United Kingdom",
+    notes: "Enigma codebreaker. Check in about computational theory, Turing machines, and artificial intelligence.",
+    selected: true,
+  },
+  {
+    name: "Ada Lovelace",
+    relationship: "Friend",
+    cadence_days: 90,
+    phone: "+44 20 7946 0958",
+    email: "ada@analyticalengine.com",
+    city: "London",
+    country: "United Kingdom",
+    notes: "First programmer in history. Talk about Bernoulli numbers, mechanical computing, and music generation algorithms.",
+    selected: true,
+  },
+  {
+    name: "Linus Torvalds",
+    relationship: "Coworker",
+    cadence_days: 30,
+    phone: "+1 (555) 987-6543",
+    email: "torvalds@linuxfoundation.org",
+    city: "Portland",
+    country: "United States",
+    notes: "Creator of Linux and Git. Ask about the kernel development status and git submodules.",
+    selected: true,
+  },
+  {
+    name: "Katherine Johnson",
+    relationship: "Mentor",
+    cadence_days: 7,
+    phone: "+1 (555) 1962-0220",
+    email: "katherine.johnson@nasa.gov",
+    city: "Hampton",
+    country: "United States",
+    notes: "NASA mathematician. Incredible orbital mechanics work. Remind me to congratulate her on Friendship 7 calculations!",
+    selected: true,
+  }
+];
+
 export default function OnboardingPage() {
   const [user, setUser] = useState<User | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -52,6 +110,143 @@ export default function OnboardingPage() {
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const [guideTab, setGuideTab] = useState<"google" | "android" | "ios">("google");
   const [importStatus, setImportStatus] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+
+  // Google Importing portal states
+  const [importingFromGoogle, setImportingFromGoogle] = useState(false);
+  const [isGooglePortalOpen, setIsGooglePortalOpen] = useState(false);
+  const [googleLoadStep, setGoogleLoadStep] = useState<"idle" | "connecting" | "decide" | "loading_sandbox" | "loading_live">("idle");
+  const [googleLoadStatusText, setGoogleLoadStatusText] = useState("");
+
+  const handleGoogleContactsImport = async () => {
+    setImportingFromGoogle(true);
+    setError("");
+    setImportStatus(null);
+    setGoogleLoadStep("idle");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const providerToken = session?.provider_token;
+
+      if (providerToken) {
+        setGoogleLoadStep("loading_live");
+        setIsGooglePortalOpen(true);
+        setGoogleLoadStatusText("Connecting to Google Account...");
+        
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setGoogleLoadStatusText("Requesting Contacts permissions...");
+        
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setGoogleLoadStatusText("Fetching Google Connections...");
+
+        try {
+          const response = await fetch(
+            "https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,birthdays,addresses,biographies&pageSize=100",
+            {
+              headers: {
+                Authorization: `Bearer ${providerToken}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Google API responded with status ${response.status}`);
+          }
+
+          const data = await response.json();
+          const connections = data.connections || [];
+          
+          if (connections.length === 0) {
+            setImportStatus({
+              type: "warning",
+              message: "No contacts found in your Google account.",
+            });
+            setIsGooglePortalOpen(false);
+            setGoogleLoadStep("idle");
+            return;
+          }
+
+          const mappedContacts: ImportingContactDraft[] = connections.map((conn: any) => {
+            const name = conn.names?.[0]?.displayName || "Unnamed Contact";
+            const phone = conn.phoneNumbers?.[0]?.value || "";
+            const email = conn.emailAddresses?.[0]?.value || "";
+            const birthdayObj = conn.birthdays?.[0]?.date;
+            let birthday = "";
+            if (birthdayObj && birthdayObj.month && birthdayObj.day) {
+              birthday = `${String(birthdayObj.month).padStart(2, '0')}-${String(birthdayObj.day).padStart(2, '0')}`;
+            }
+            const addressObj = conn.addresses?.[0];
+            const city = addressObj?.locality || "";
+            const country = addressObj?.country || "";
+            const notes = conn.biographies?.[0]?.value || "";
+
+            return {
+              name,
+              phone,
+              email,
+              city,
+              country,
+              birthday,
+              notes,
+              relationship: "Friend",
+              cadence_days: 30,
+              selected: true,
+            };
+          });
+
+          setImportingContacts(mappedContacts);
+          setIsGooglePortalOpen(false);
+          setIsReviewModalOpen(true);
+        } catch (apiErr: any) {
+          console.error("Failed to fetch live Google Contacts:", apiErr);
+          setGoogleLoadStep("decide");
+        }
+      } else {
+        setGoogleLoadStep("decide");
+        setIsGooglePortalOpen(true);
+      }
+    } catch (err: any) {
+      console.error("Auth session check error:", err);
+      setGoogleLoadStep("decide");
+      setIsGooglePortalOpen(true);
+    } finally {
+      setImportingFromGoogle(false);
+    }
+  };
+
+  const handleConnectSandbox = async () => {
+    setGoogleLoadStep("loading_sandbox");
+    setGoogleLoadStatusText("Initializing Sandbox environment...");
+    await new Promise(resolve => setTimeout(resolve, 600));
+    setGoogleLoadStatusText("Decrypting secure contacts payload...");
+    await new Promise(resolve => setTimeout(resolve, 600));
+    setGoogleLoadStatusText("Staging sandbox relationships...");
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    setImportingContacts(SANDBOX_GOOGLE_CONTACTS);
+    setIsGooglePortalOpen(false);
+    setGoogleLoadStep("idle");
+    setIsReviewModalOpen(true);
+  };
+
+  const handleLinkGoogleAccount = async () => {
+    setGoogleLoadStep("connecting");
+    setGoogleLoadStatusText("Redirecting to Google OAuth...");
+    try {
+      const { error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          scopes: "https://www.googleapis.com/auth/contacts.readonly",
+          redirectTo: `${window.location.origin}/onboarding`,
+        },
+      });
+      if (googleError) throw googleError;
+    } catch (err: any) {
+      setError(err.message || "Failed to link Google account.");
+      console.error("Link Google Error:", err);
+      setGoogleLoadStep("idle");
+      setIsGooglePortalOpen(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -311,6 +506,28 @@ export default function OnboardingPage() {
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
 
+                      {/* Google import button */}
+                      <button
+                        type="button"
+                        onClick={handleGoogleContactsImport}
+                        disabled={importingFromGoogle}
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500 text-cyan-400 hover:text-white rounded-lg text-xs font-bold cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      >
+                        {importingFromGoogle ? (
+                          <svg className="animate-spin h-3.5 w-3.5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                            <path
+                              fill="currentColor"
+                              d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5a5.99 5.99 0 0 1 5.99-6.013c1.558 0 2.973.57 4.077 1.512l3.078-3.078A10.15 10.15 0 0 0 13.99 2 10.19 10.19 0 0 0 3.8 12.19a10.19 10.19 0 0 0 10.19 10.19c5.69 0 10.14-4 10.14-10.19 0-.616-.057-1.21-.16-1.785H12.24Z"
+                            />
+                          </svg>
+                        )}
+                        Import from Google
+                      </button>
 
                       <label className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-500 text-indigo-400 hover:text-white rounded-lg text-xs font-bold cursor-pointer transition-all duration-200">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -918,6 +1135,117 @@ export default function OnboardingPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* GOOGLE PORTAL DIALOG */}
+      {isGooglePortalOpen && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => {
+            if (googleLoadStep === "idle" || googleLoadStep === "decide") {
+              setIsGooglePortalOpen(false);
+              setGoogleLoadStep("idle");
+            }
+          }}
+        >
+          <div
+            className="bg-[#0b1120] border border-gray-800 rounded-3xl max-w-md w-full overflow-hidden animate-scaleUp shadow-2xl p-6 sm:p-8 flex flex-col items-center text-center relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            {(googleLoadStep === "idle" || googleLoadStep === "decide") && (
+              <button
+                onClick={() => {
+                  setIsGooglePortalOpen(false);
+                  setGoogleLoadStep("idle");
+                }}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white border border-slate-800 rounded-full hover:bg-[#111827] cursor-pointer"
+                title="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+
+            {/* Step 1: Animated loading states for sandbox or live API */}
+            {(googleLoadStep === "loading_sandbox" || googleLoadStep === "loading_live" || googleLoadStep === "connecting") ? (
+              <div className="py-10 flex flex-col items-center justify-center space-y-4 animate-fadeIn">
+                <svg className="animate-spin h-10 w-10 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div className="space-y-1.5">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Syncing with Google</h4>
+                  <p className="text-xs text-cyan-400 font-semibold animate-pulse">{googleLoadStatusText}</p>
+                </div>
+              </div>
+            ) : (
+              /* Step 2: The Portal Decision interface */
+              <div className="space-y-6 w-full animate-fadeIn">
+                <div className="w-14 h-14 mx-auto rounded-full bg-cyan-950/50 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-2 shadow-[0_0_20px_rgba(6,182,212,0.05)]">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5a5.99 5.99 0 0 1 5.99-6.013c1.558 0 2.973.57 4.077 1.512l3.078-3.078A10.15 10.15 0 0 0 13.99 2 10.19 10.19 0 0 0 3.8 12.19a10.19 10.19 0 0 0 10.19 10.19c5.69 0 10.14-4 10.14-10.19 0-.616-.057-1.21-.16-1.785H12.24Z"
+                    />
+                  </svg>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-white">Google Contacts Connector</h3>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    Choose how you would like to import your contacts into your circle.
+                  </p>
+                </div>
+
+                {/* Main options panel */}
+                <div className="space-y-3.5 pt-2">
+                  {/* Option A: Sandbox (Instant demo) */}
+                  <button
+                    type="button"
+                    onClick={handleConnectSandbox}
+                    className="w-full text-left p-4 bg-[#111827]/40 hover:bg-[#111827]/80 border border-cyan-500/20 hover:border-cyan-500 rounded-2xl transition-all duration-200 group flex items-start gap-3.5 cursor-pointer shadow-[0_0_15px_rgba(6,182,212,0.02)]"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-200">
+                      ⚡
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-white">Connect Sandbox (Instant)</h4>
+                        <span className="text-[9px] bg-cyan-500/10 text-cyan-400 font-bold px-1.5 py-0.5 rounded uppercase leading-none">Demo</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-normal">
+                        Instantly load 5 famous developers (Ada Lovelace, Grace Hopper, etc.) to explore. No setup required!
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Option B: Real Live Connect */}
+                  <button
+                    type="button"
+                    onClick={handleLinkGoogleAccount}
+                    className="w-full text-left p-4 bg-[#111827]/40 hover:bg-[#111827]/80 border border-gray-800 hover:border-indigo-500/50 rounded-2xl transition-all duration-200 group flex items-start gap-3.5 cursor-pointer"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-200">
+                      🔗
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <h4 className="text-xs font-bold text-white">Link Live Google Account</h4>
+                      <p className="text-[10px] text-slate-400 leading-normal">
+                        Authorize this app to read your actual Google Connections via secure Google OAuth.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="pt-2 text-[10px] text-slate-500 text-center leading-normal">
+                  💡 Note: Real Google syncing requires you to have configured OAuth client IDs inside your Supabase dashboard settings.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
