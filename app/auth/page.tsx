@@ -75,7 +75,7 @@ export default function AuthPage() {
         provider: "google",
         options: {
           scopes: "https://www.googleapis.com/auth/contacts.readonly",
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
