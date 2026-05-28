@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { getLocalTime as getLocalTimeUtil, formatBirthdayForDB, parseBirthday, parseVCard, mapDeviceContact } from "@/lib/utils";
+import { getLocalTime as getLocalTimeUtil, formatBirthdayForDB, parseBirthday, parseVCard } from "@/lib/utils";
 
 interface ImportingContactDraft {
   name: string;
@@ -115,7 +115,7 @@ export default function Home() {
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
 
   // Automated Importing states
-  const [isContactPickerSupported, setIsContactPickerSupported] = useState(false);
+
   const [importingContacts, setImportingContacts] = useState<ImportingContactDraft[]>([]);
   const [isImportReviewOpen, setIsImportReviewOpen] = useState(false);
   const [isImportGuideOpen, setIsImportGuideOpen] = useState(false);
@@ -453,42 +453,7 @@ export default function Home() {
   };
 
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && "contacts" in navigator && "select" in (navigator as any).contacts) {
-      setIsContactPickerSupported(true);
-    }
-  }, []);
 
-  // Native Mobile Device Contact Picker API for dashboard
-  const handleDeviceContactPicker = async () => {
-    try {
-      setAddError("");
-      setImportStatus(null);
-      
-      const props = ["name", "email", "tel", "address"];
-      const opts = { multiple: true };
-      
-      const pickedContacts = await (navigator as any).contacts.select(props, opts);
-      
-      if (pickedContacts && pickedContacts.length > 0) {
-        const mapped = pickedContacts.map((c: any) => ({
-          ...mapDeviceContact(c),
-          selected: true,
-        }));
-        
-        setImportingContacts(mapped);
-        setIsImportReviewOpen(true);
-      }
-    } catch (err: any) {
-      if (err.name !== "AbortError") {
-        console.error("Device Contact Picker Error:", err);
-        setImportStatus({
-          type: "error",
-          message: err.message || "Failed to access device contacts.",
-        });
-      }
-    }
-  };
 
   // vCard (.vcf) File Parser for dashboard
   const handleVcfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2437,18 +2402,7 @@ export default function Home() {
                     <p className="text-[10px] text-slate-400 mt-0.5">Import from your device contacts or upload a .vcf file.</p>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {isContactPickerSupported && (
-                      <button
-                        type="button"
-                        onClick={handleDeviceContactPicker}
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-500 text-cyan-400 hover:text-white rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                        </svg>
-                        Device
-                      </button>
-                    )}
+
 
                     <label className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-500 text-indigo-400 hover:text-white rounded-lg text-xs font-bold cursor-pointer transition-all duration-200">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

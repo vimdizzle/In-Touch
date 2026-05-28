@@ -266,38 +266,6 @@ export const parseVCard = (vcardText: string): Array<{
   return contacts;
 };
 
-/**
- * Maps W3C Device Contact Picker result to In Touch internal Contact structure.
- */
-export const mapDeviceContact = (deviceContact: any): {
-  name: string;
-  phone?: string;
-  email?: string;
-  city?: string;
-  country?: string;
-  relationship: string;
-  cadence_days: number;
-} => {
-  const name = deviceContact.name?.[0] || "";
-  const phone = deviceContact.tel?.[0] || "";
-  const email = deviceContact.email?.[0] || "";
 
-  let city = "";
-  let country = "";
-  if (deviceContact.address && deviceContact.address.length > 0) {
-    city = deviceContact.address[0].city || "";
-    country = deviceContact.address[0].country || "";
-  }
-
-  return {
-    name,
-    phone: phone || undefined,
-    email: email || undefined,
-    city: city || undefined,
-    country: country || undefined,
-    relationship: "Friend",
-    cadence_days: 30,
-  };
-};
 
 
