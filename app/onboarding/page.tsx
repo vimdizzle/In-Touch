@@ -252,44 +252,30 @@ export default function OnboardingPage() {
   };
 
 
+  // 1. Initial auth check & session setup
   useEffect(() => {
-    // If we are currently handling an OAuth redirect hash (containing access_token),
-    // let Supabase's client-side listener handle it and do NOT immediately redirect to /auth!
+    let isMounted = true;
     const isOAuthCallback = typeof window !== "undefined" && (
       window.location.hash.includes("access_token") || 
       window.location.search.includes("code=")
     );
 
-    // Fail-safe timeout: if auth check or database load takes too long, redirect to auth to prevent getting stuck
+    // Fail-safe timeout to prevent perpetual loading screen
     const fallbackTimer = setTimeout(() => {
-      if (loading) {
-        console.warn("Onboarding auth check timed out. Safely redirecting to /auth.");
+      if (isMounted && loading) {
+        console.warn("Onboarding auth check timed out. Transitioning out of loading state.");
         router.push("/auth");
         setLoading(false);
       }
-    }, 10000);
+    }, 6000);
 
+    // Check session
     supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
+      .then(({ data: { session } }) => {
+        if (!isMounted) return;
         if (session) {
+          clearTimeout(fallbackTimer);
           setUser(session.user);
-          try {
-            // Load existing contacts
-            const { data, error } = await supabase
-              .from("contacts")
-              .select("*")
-              .eq("user_id", session.user.id)
-              .order("created_at", { ascending: false });
-            
-            if (!error && data) {
-              setContacts(data);
-            }
-          } catch (err) {
-            console.error("Error loading onboarding contacts:", err);
-          } finally {
-            clearTimeout(fallbackTimer);
-            setLoading(false);
-          }
         } else if (!isOAuthCallback) {
           clearTimeout(fallbackTimer);
           router.push("/auth");
@@ -297,46 +283,99 @@ export default function OnboardingPage() {
         }
       })
       .catch((err) => {
-        console.error("Error getting session on onboarding page:", err);
-        clearTimeout(fallbackTimer);
-        router.push("/auth");
-        setLoading(false);
-      });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        setUser(session.user);
-        try {
-          // Load existing contacts
-          const { data, error } = await supabase
-            .from("contacts")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .order("created_at", { ascending: false });
-          
-          if (!error && data) {
-            setContacts(data);
-          }
-        } catch (err) {
-          console.error("Error loading onboarding contacts via subscription:", err);
-        } finally {
+        console.error("Error checking session in onboarding:", err);
+        if (isMounted) {
           clearTimeout(fallbackTimer);
+          router.push("/auth");
           setLoading(false);
         }
-      } else if (!isOAuthCallback) {
+      });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      if (session) {
         clearTimeout(fallbackTimer);
+        setUser(session.user);
+      } else if (_event === "SIGNED_OUT") {
+        clearTimeout(fallbackTimer);
+        setUser(null);
+        setContacts([]);
         router.push("/auth");
         setLoading(false);
       }
     });
 
     return () => {
+      isMounted = false;
       clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  // 2. Fetch contacts and ensure user profile once user state is set
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    
+    const fetchOnboardingData = async () => {
+      try {
+        // Ensure user has a profile in public.users (especially for Google OAuth)
+        const { data: profile, error: profileErr } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!profileErr && !profile) {
+          console.log("Auto-creating onboarding user profile:", user.email);
+          await supabase
+            .from("users")
+            .insert([{ 
+              id: user.id, 
+              email: user.email || null,
+              name: user.user_metadata?.full_name || user.user_metadata?.name || null
+            }]);
+        }
+
+        // Fetch existing contacts
+        const { data, error } = await supabase
+          .from("contacts")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        
+        if (!error && data && isMounted) {
+          setContacts(data);
+        }
+      } catch (err) {
+        console.error("Error loading onboarding data in useEffect:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchOnboardingData();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Safety redirection hook
+  useEffect(() => {
+    if (!loading && !user) {
+      console.warn("No user found on onboarding after loading completed. Redirecting to /auth.");
+      router.push("/auth");
+    }
+  }, [loading, user, router]);
 
 
 
