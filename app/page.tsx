@@ -1970,7 +1970,7 @@ export default function Home() {
                                       value={editTouchpointDate}
                                       onChange={(e) => setEditTouchpointDate(e.target.value)}
                                       required
-                                      className="block w-full min-w-full px-3 py-1.5 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 text-xs appearance-none"
+                                      className="block w-full min-w-full h-[30px] min-h-[30px] px-3 py-1.5 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 text-xs"
                                     />
                                   </div>
                                   <div>
@@ -2591,7 +2591,7 @@ export default function Home() {
                       type="date"
                       value={addLastTouchpointDate}
                       onChange={(e) => setAddLastTouchpointDate(e.target.value)}
-                      className="block w-full min-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm appearance-none"
+                      className="block w-full min-w-full h-[38px] min-h-[38px] px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                     />
                   </div>
                 </div>
@@ -2845,7 +2845,7 @@ export default function Home() {
                     value={logDate}
                     onChange={(e) => setLogDate(e.target.value)}
                     required
-                    className="block w-full min-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm appearance-none"
+                    className="block w-full min-w-full h-[38px] min-h-[38px] px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                   />
                 </div>
 

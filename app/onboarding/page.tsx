@@ -860,7 +860,7 @@ export default function OnboardingPage() {
                     type="date"
                     value={lastTouchpointDate}
                     onChange={(e) => setLastTouchpointDate(e.target.value)}
-                    className="block w-full min-w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm appearance-none"
+                    className="block w-full min-w-full h-[38px] min-h-[38px] px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
                   />
                 </div>
               </div>
@@ -880,41 +880,33 @@ export default function OnboardingPage() {
               </div>
 
               {/* Form Actions */}
-              <div className="flex gap-3 pt-2">
-                {(name || relationship !== "Friend" || cadenceDays !== 30 || phone || email || city || country || birthdayMonth || lastTouchpointDate || notes || editingContactId) && (
-                  <button
-                    type="button"
-                    onClick={editingContactId ? handleCancelEdit : handleClearForm}
-                    className="px-4 py-3 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-xl hover:border-gray-650 hover:bg-[#111827] transition-all duration-200 cursor-pointer text-xs font-bold shrink-0"
-                  >
-                    {editingContactId ? "Cancel" : "Clear"}
-                  </button>
-                )}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-800/80 shrink-0">
+                <button
+                  type="button"
+                  onClick={editingContactId ? handleCancelEdit : handleClearForm}
+                  className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
+                  title={editingContactId ? "Cancel Edit" : "Clear Form"}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
 
                 <button
                   type="submit"
                   disabled={saving || !name.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-cyan-950/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                  className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/50 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 disabled:opacity-50 cursor-pointer"
+                  title={editingContactId ? "Save Changes" : "Add to Circle"}
                 >
                   {saving ? (
-                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                  ) : editingContactId ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                      Save Changes
-                    </>
                   ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      Add to Circle
-                    </>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
                   )}
                 </button>
               </div>

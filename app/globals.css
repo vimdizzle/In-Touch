@@ -19,8 +19,7 @@ input[type="time"] {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
+  min-height: 38px;
 }
 
 /* Ensure date/time inputs don't overflow on mobile */
