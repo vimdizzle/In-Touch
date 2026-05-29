@@ -20,29 +20,37 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) {
-        router.push("/auth");
-        return;
+      try {
+        if (!session) {
+          router.push("/auth");
+          return;
+        }
+
+        setUser(session.user);
+        
+        // Load user info
+        const { data: userData } = await supabase
+          .from("users")
+          .select("name, email")
+          .eq("id", session.user.id)
+          .single();
+
+        if (userData) {
+          setName(userData.name || session.user.email?.split("@")[0] || "");
+          setEmail(userData.email || session.user.email || "");
+        } else {
+          // Fallback to auth user email
+          setName(session.user.email?.split("@")[0] || "");
+          setEmail(session.user.email || "");
+        }
+      } catch (err) {
+        console.error("Error loading user info in feedback page:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setUser(session.user);
-      
-      // Load user info
-      const { data: userData } = await supabase
-        .from("users")
-        .select("name, email")
-        .eq("id", session.user.id)
-        .single();
-
-      if (userData) {
-        setName(userData.name || session.user.email?.split("@")[0] || "");
-        setEmail(userData.email || session.user.email || "");
-      } else {
-        // Fallback to auth user email
-        setName(session.user.email?.split("@")[0] || "");
-        setEmail(session.user.email || "");
-      }
-
+    }).catch((err) => {
+      console.error("Error getting session in feedback page:", err);
+      router.push("/auth");
       setLoading(false);
     });
   }, [router]);

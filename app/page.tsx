@@ -154,37 +154,45 @@ export default function Home() {
       // DO NOT clean the URL here — Supabase needs to read the hash fragment first
     }
 
-    // Fail-safe timeout for OAuth callbacks
+    // Fail-safe timeout to prevent perpetual loading screen
     const fallbackTimer = setTimeout(() => {
-      if (isOAuthCallback && loading) {
-        console.warn("OAuth callback timed out after 12 seconds.");
-        // Clean URL and stop loading so user isn't stuck
-        window.history.replaceState({}, "", window.location.pathname);
+      if (loading) {
+        console.warn("Auth check timed out. Transitioning out of loading state.");
+        if (isOAuthCallback) {
+          window.history.replaceState({}, "", window.location.pathname);
+        }
         setLoading(false);
       }
-    }, 12000);
+    }, 10000);
 
     // Check for an existing session
     // With implicit flow + detectSessionInUrl, Supabase auto-parses the #access_token
     // during client init, so getSession() should already have the session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        clearTimeout(fallbackTimer);
-        console.log("Session found for user:", session.user.email);
-        // Clean URL if it has OAuth params
-        if (isOAuthCallback) {
-          window.history.replaceState({}, "", window.location.pathname);
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (session) {
+          clearTimeout(fallbackTimer);
+          console.log("Session found for user:", session.user.email);
+          // Clean URL if it has OAuth params
+          if (isOAuthCallback) {
+            window.history.replaceState({}, "", window.location.pathname);
+          }
+          setUser(session.user);
+          await loadContacts(session.user.id);
+          setLoading(false);
+        } else if (!isOAuthCallback) {
+          clearTimeout(fallbackTimer);
+          router.push("/auth");
+          setLoading(false);
         }
-        setUser(session.user);
-        await loadContacts(session.user.id);
-        setLoading(false);
-      } else if (!isOAuthCallback) {
+        // If isOAuthCallback but no session yet, onAuthStateChange below will catch it
+      })
+      .catch((err) => {
+        console.error("Error checking session:", err);
         clearTimeout(fallbackTimer);
         router.push("/auth");
         setLoading(false);
-      }
-      // If isOAuthCallback but no session yet, onAuthStateChange below will catch it
-    });
+      });
 
     // Listen for auth state changes
     const {

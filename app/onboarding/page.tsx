@@ -257,39 +257,45 @@ export default function OnboardingPage() {
       window.location.search.includes("code=")
     );
 
-    // Fail-safe timeout: if we are in an OAuth callback but it takes more than 2.5 seconds,
-    // assume the token is expired/invalid and gracefully redirect to /auth so we don't get stuck!
+    // Fail-safe timeout: if auth check or database load takes too long, redirect to auth to prevent getting stuck
     const fallbackTimer = setTimeout(() => {
-      if (isOAuthCallback && loading) {
-        console.warn("OAuth callback took too long or token is expired. Redirecting to /auth.");
+      if (loading) {
+        console.warn("Onboarding auth check timed out. Safely redirecting to /auth.");
         router.push("/auth");
         setLoading(false);
       }
-    }, 2500);
+    }, 10000);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        clearTimeout(fallbackTimer);
-        setUser(session.user);
-        
-        // Load existing contacts
-        const { data, error } = await supabase
-          .from("contacts")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false });
-        
-        if (!error && data) {
-          setContacts(data);
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (session) {
+          clearTimeout(fallbackTimer);
+          setUser(session.user);
+          
+          // Load existing contacts
+          const { data, error } = await supabase
+            .from("contacts")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .order("created_at", { ascending: false });
+          
+          if (!error && data) {
+            setContacts(data);
+          }
+          
+          setLoading(false);
+        } else if (!isOAuthCallback) {
+          clearTimeout(fallbackTimer);
+          router.push("/auth");
+          setLoading(false);
         }
-        
-        setLoading(false);
-      } else if (!isOAuthCallback) {
+      })
+      .catch((err) => {
+        console.error("Error getting session on onboarding page:", err);
         clearTimeout(fallbackTimer);
         router.push("/auth");
         setLoading(false);
-      }
-    });
+      });
 
     const {
       data: { subscription },
@@ -320,7 +326,7 @@ export default function OnboardingPage() {
       clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
-  }, [router, loading]);
+  }, [router]);
 
 
 
