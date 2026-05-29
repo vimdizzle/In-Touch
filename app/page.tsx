@@ -143,6 +143,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Detect if this page load is an OAuth callback (hash fragment from implicit flow)
     const isOAuthCallback = typeof window !== "undefined" && (
       window.location.hash.includes("access_token") || 
@@ -151,77 +153,100 @@ export default function Home() {
 
     if (isOAuthCallback) {
       console.log("OAuth callback detected on main page — Supabase will auto-process the token");
-      // DO NOT clean the URL here — Supabase needs to read the hash fragment first
     }
 
     // Fail-safe timeout to prevent perpetual loading screen
     const fallbackTimer = setTimeout(() => {
-      if (loading) {
+      if (isMounted && loading) {
         console.warn("Auth check timed out. Transitioning out of loading state.");
         if (isOAuthCallback) {
           window.history.replaceState({}, "", window.location.pathname);
         }
         setLoading(false);
       }
-    }, 10000);
+    }, 6000);
 
     // Check for an existing session
-    // With implicit flow + detectSessionInUrl, Supabase auto-parses the #access_token
-    // during client init, so getSession() should already have the session
     supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
+      .then(({ data: { session } }) => {
+        if (!isMounted) return;
         if (session) {
           clearTimeout(fallbackTimer);
           console.log("Session found for user:", session.user.email);
-          // Clean URL if it has OAuth params
           if (isOAuthCallback) {
             window.history.replaceState({}, "", window.location.pathname);
           }
           setUser(session.user);
-          await loadContacts(session.user.id);
-          setLoading(false);
         } else if (!isOAuthCallback) {
           clearTimeout(fallbackTimer);
           router.push("/auth");
           setLoading(false);
         }
-        // If isOAuthCallback but no session yet, onAuthStateChange below will catch it
       })
       .catch((err) => {
         console.error("Error checking session:", err);
-        clearTimeout(fallbackTimer);
-        router.push("/auth");
-        setLoading(false);
+        if (isMounted) {
+          clearTimeout(fallbackTimer);
+          router.push("/auth");
+          setLoading(false);
+        }
       });
 
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
       console.log("Auth state change:", _event, session ? "has session" : "no session");
       if (session) {
         clearTimeout(fallbackTimer);
-        // Clean URL if it has OAuth params
         if (typeof window !== "undefined" && (window.location.hash.includes("access_token") || window.location.search.includes("code="))) {
           window.history.replaceState({}, "", window.location.pathname);
         }
         setUser(session.user);
-        await loadContacts(session.user.id);
-        setLoading(false);
       } else if (_event === "SIGNED_OUT") {
         clearTimeout(fallbackTimer);
         setUser(null);
+        setContacts([]);
         router.push("/auth");
         setLoading(false);
       }
     });
 
     return () => {
+      isMounted = false;
       clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  // Separate effect to load contacts whenever user is set or changed
+  // This avoids concurrent DB fetching and locks by isolating async fetches from auth state subscription triggers
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    
+    const fetchUserData = async () => {
+      try {
+        await loadContacts(user.id);
+      } catch (err) {
+        console.error("Error fetching user data in useEffect:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchUserData();
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
 
   const loadContacts = async (userId: string) => {
