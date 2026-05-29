@@ -248,6 +248,14 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Safety redirection hook to prevent perpetual loading/blank screens
+  useEffect(() => {
+    if (!loading && !user) {
+      console.warn("No user found after loading completed. Redirecting to /auth.");
+      router.push("/auth");
+    }
+  }, [loading, user, router]);
+
 
   const loadContacts = async (userId: string) => {
     try {
