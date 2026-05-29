@@ -22,7 +22,6 @@ import VCardImportReviewModal from "@/app/components/VCardImportReviewModal";
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authDebug, setAuthDebug] = useState<string>("");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -152,7 +151,6 @@ export default function Home() {
 
     if (isOAuthCallback) {
       console.log("OAuth callback detected on main page — Supabase will auto-process the token");
-      setAuthDebug("Processing authentication...");
       // DO NOT clean the URL here — Supabase needs to read the hash fragment first
     }
 
@@ -160,7 +158,6 @@ export default function Home() {
     const fallbackTimer = setTimeout(() => {
       if (isOAuthCallback && loading) {
         console.warn("OAuth callback timed out after 12 seconds.");
-        setAuthDebug("Authentication timed out. Please try again.");
         // Clean URL and stop loading so user isn't stuck
         window.history.replaceState({}, "", window.location.pathname);
         setLoading(false);
@@ -174,7 +171,6 @@ export default function Home() {
       if (session) {
         clearTimeout(fallbackTimer);
         console.log("Session found for user:", session.user.email);
-        setAuthDebug("");
         // Clean URL if it has OAuth params
         if (isOAuthCallback) {
           window.history.replaceState({}, "", window.location.pathname);
@@ -197,7 +193,6 @@ export default function Home() {
       console.log("Auth state change:", _event, session ? "has session" : "no session");
       if (session) {
         clearTimeout(fallbackTimer);
-        setAuthDebug("");
         // Clean URL if it has OAuth params
         if (typeof window !== "undefined" && (window.location.hash.includes("access_token") || window.location.search.includes("code="))) {
           window.history.replaceState({}, "", window.location.pathname);
@@ -1048,28 +1043,15 @@ export default function Home() {
     return contacts.find(c => c.id === expandedId) || null;
   }, [contacts, expandedId]);
 
-  if (loading || (!user && authDebug)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
         <div className="text-white flex flex-col items-center gap-3 animate-fadeIn">
-          {loading && (
-            <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          )}
-          <span className="text-sm font-semibold tracking-wide text-gray-400">{loading ? "Loading..." : "Authentication"}</span>
-          {authDebug && (
-            <div className="mt-4 max-w-md text-center">
-              <p className="text-xs text-amber-400 font-mono break-all">{authDebug}</p>
-              <button
-                onClick={() => { setAuthDebug(""); window.location.href = "/auth"; }}
-                className="mt-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm transition-colors"
-              >
-                Back to Sign In
-              </button>
-            </div>
-          )}
+          <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-sm font-semibold tracking-wide text-gray-400">Loading...</span>
         </div>
       </div>
     );
