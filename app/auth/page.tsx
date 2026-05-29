@@ -74,7 +74,6 @@ export default function AuthPage() {
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          scopes: "https://www.googleapis.com/auth/contacts.readonly",
           redirectTo: window.location.origin,
         },
       });
