@@ -514,7 +514,7 @@ export default function OnboardingPage() {
       setError("");
 
       // Set temporary confirmation message and pull user to top
-      setSuccessMessage(isEdit ? `Changes to "${savedName}" saved successfully!` : `"${savedName}" successfully added to your circle!`);
+      setSuccessMessage(isEdit ? `Changes to "${savedName}" saved successfully!` : `"${savedName}" successfully added to your contacts!`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
       setTimeout(() => {
@@ -609,7 +609,7 @@ export default function OnboardingPage() {
             <div>
               <h3 className="text-2xl font-extrabold text-white tracking-tight mb-2">Onboard Contacts</h3>
               <p className="text-xs text-slate-400">
-                Add the people in your circle. Form fields match the Add Contact dashboard modal exactly.
+                Add your contacts. Form fields match the Add Contact dashboard modal exactly.
               </p>
             </div>
 
@@ -922,7 +922,7 @@ export default function OnboardingPage() {
                   type="submit"
                   disabled={saving || !name.trim()}
                   className="w-12 h-12 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/50 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 disabled:opacity-50 cursor-pointer"
-                  title={editingContactId ? "Save Changes" : "Add to Circle"}
+                  title={editingContactId ? "Save Changes" : "Add Contact"}
                 >
                   {saving ? (
                     <svg className="animate-spin h-5 w-5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1099,7 +1099,7 @@ export default function OnboardingPage() {
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Setup Complete!</h3>
               <p className="text-slate-400 text-xs leading-relaxed mb-8">
-                You have successfully configured <strong>{contacts.length} connection{contacts.length !== 1 ? 's' : ''}</strong> in your inner circle. We will start tracking your connection schedules right away.
+                You have successfully added <strong className="text-white font-bold">{contacts.length} contact{contacts.length !== 1 ? 's' : ''}</strong>! Time to stay in touch.
               </p>
 
               <button
@@ -1125,7 +1125,7 @@ export default function OnboardingPage() {
           >
             <h3 className="text-xl font-bold text-white mb-2">Unsaved Contact Details</h3>
             <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-              You are currently editing details for <span className="text-white font-semibold">{name || "this contact"}</span>. Would you like to add them to your circle first before completing your setup?
+              You are currently editing details for <span className="text-white font-semibold">{name || "this contact"}</span>. Would you like to add them to your contacts first before completing your setup?
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-end">
               <button
