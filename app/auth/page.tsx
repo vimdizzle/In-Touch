@@ -102,7 +102,12 @@ export default function AuthPage() {
               </svg>
             </div>
           </div>
-          <h1 className="text-xs uppercase tracking-widest text-slate-400 mb-2 font-bold font-sans">
+          <h1 
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            className="text-xs uppercase tracking-widest text-slate-400 hover:text-cyan-400 transition-all duration-200 cursor-pointer select-none font-bold font-sans mb-2 tracking-[0.2em] active:scale-95"
+          >
             IN TOUCH
           </h1>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 leading-tight">

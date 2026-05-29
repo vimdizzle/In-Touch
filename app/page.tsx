@@ -1080,7 +1080,12 @@ export default function Home() {
       <div className="max-w-7xl mx-auto p-4 sm:p-8">
         <div className="mb-8">
           <div className="flex justify-between items-center gap-4 mb-4">
-            <h1 className="text-sm uppercase tracking-widest text-gray-400">
+            <h1 
+              onClick={() => {
+                window.location.href = "/";
+              }}
+              className="text-sm uppercase tracking-widest text-gray-400 hover:text-cyan-400 transition-all duration-200 cursor-pointer select-none font-bold tracking-[0.2em] active:scale-95"
+            >
               IN TOUCH
             </h1>
             <div className="flex gap-2 sm:gap-3 items-center">
