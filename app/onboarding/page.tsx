@@ -269,21 +269,24 @@ export default function OnboardingPage() {
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         if (session) {
-          clearTimeout(fallbackTimer);
           setUser(session.user);
-          
-          // Load existing contacts
-          const { data, error } = await supabase
-            .from("contacts")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .order("created_at", { ascending: false });
-          
-          if (!error && data) {
-            setContacts(data);
+          try {
+            // Load existing contacts
+            const { data, error } = await supabase
+              .from("contacts")
+              .select("*")
+              .eq("user_id", session.user.id)
+              .order("created_at", { ascending: false });
+            
+            if (!error && data) {
+              setContacts(data);
+            }
+          } catch (err) {
+            console.error("Error loading onboarding contacts:", err);
+          } finally {
+            clearTimeout(fallbackTimer);
+            setLoading(false);
           }
-          
-          setLoading(false);
         } else if (!isOAuthCallback) {
           clearTimeout(fallbackTimer);
           router.push("/auth");
@@ -301,20 +304,24 @@ export default function OnboardingPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        clearTimeout(fallbackTimer);
         setUser(session.user);
-        
-        // Load existing contacts
-        const { data, error } = await supabase
-          .from("contacts")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false });
-        
-        if (!error && data) {
-          setContacts(data);
+        try {
+          // Load existing contacts
+          const { data, error } = await supabase
+            .from("contacts")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .order("created_at", { ascending: false });
+          
+          if (!error && data) {
+            setContacts(data);
+          }
+        } catch (err) {
+          console.error("Error loading onboarding contacts via subscription:", err);
+        } finally {
+          clearTimeout(fallbackTimer);
+          setLoading(false);
         }
-        setLoading(false);
       } else if (!isOAuthCallback) {
         clearTimeout(fallbackTimer);
         router.push("/auth");
