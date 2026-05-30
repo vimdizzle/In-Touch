@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,6 +20,10 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -146,6 +151,24 @@ export default function AuthPage() {
             />
           </div>
 
+          {isSignUp && (
+            <div className="animate-fadeIn">
+              <label htmlFor="confirmPassword" className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Repeat Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-4 py-2.5 bg-[#111827] border border-gray-700/80 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all duration-200 text-sm"
+                placeholder="••••••••"
+              />
+            </div>
+          )}
+
           {error && (
             <div className="p-3 bg-red-900/20 border border-red-800/60 text-red-400 rounded-xl text-xs leading-relaxed animate-fadeIn">
               {error}
@@ -201,7 +224,11 @@ export default function AuthPage() {
 
         <div className="mt-8 text-center">
           <button
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setConfirmPassword("");
+              setError("");
+            }}
             className="text-xs sm:text-sm text-gray-400 hover:text-cyan-400 transition-colors font-medium"
           >
             {isSignUp
