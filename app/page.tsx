@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { 
   getLocalTime, 
@@ -15,12 +15,12 @@ import {
 import AddContactModal from "@/app/components/AddContactModal";
 import SettingsModal from "@/app/components/SettingsModal";
 import LogTouchpointModal from "@/app/components/LogTouchpointModal";
-import ReachOutModal from "@/app/components/ReachOutModal";
+import ConfigurePhoneModal from "@/app/components/ConfigurePhoneModal";
 import ImportGuideModal from "@/app/components/ImportGuideModal";
 import ProfileDrawer from "@/app/components/ProfileDrawer";
 import VCardImportReviewModal from "@/app/components/VCardImportReviewModal";
 
-export default function Home() {
+function HomeContent() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -29,8 +29,37 @@ export default function Home() {
   const [comingUpSort, setComingUpSort] = useState<"next_touch" | "name">("next_touch");
   const [onTrackSort, setOnTrackSort] = useState<"next_touch" | "name">("next_touch");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeContactMenu, setActiveContactMenu] = useState<Contact | null>(null);
+  const [phoneConfigureContact, setPhoneConfigureContact] = useState<Contact | null>(null);
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const hasOpenedInSession = useRef(false);
+
+  // Sync expandedId state with URL contact query param
+  useEffect(() => {
+    const contactParam = searchParams.get("contact");
+    setExpandedId(contactParam);
+  }, [searchParams]);
+
+  // Navigate when selecting or deselecting a contact
+  const handleSelectContact = (id: string | null) => {
+    if (id) {
+      hasOpenedInSession.current = true;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("contact", id);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    } else {
+      if (hasOpenedInSession.current) {
+        router.back();
+      } else {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("contact");
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        setExpandedId(null);
+      }
+    }
+  };
 
   // Modal and drawer trigger states
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
@@ -41,10 +70,40 @@ export default function Home() {
   // Timezones cache mapping "city|country|location" -> timezone
   const [timezoneMap, setTimezoneMap] = useState<Record<string, string | null>>({});
 
+  // Load cached timezones on mount to avoid hydration mismatch
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("in-touch-timezones");
+      if (cached) {
+        try {
+          setTimezoneMap(JSON.parse(cached));
+        } catch (err) {
+          console.error("Failed to parse cached timezones:", err);
+        }
+      }
+    }
+  }, []);
+
   // Importing states
   const [importingContacts, setImportingContacts] = useState<ImportingContactDraft[]>([]);
   const [isImportReviewOpen, setIsImportReviewOpen] = useState(false);
   const [importStatus, setImportStatus] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+
+  const handleCallAction = (contact: Contact) => {
+    if (!contact.phone) {
+      setPhoneConfigureContact(contact);
+    } else {
+      window.location.href = `tel:${contact.phone}`;
+    }
+  };
+
+  const handleTextAction = (contact: Contact) => {
+    if (!contact.phone) {
+      setPhoneConfigureContact(contact);
+    } else {
+      window.location.href = `sms:${contact.phone}`;
+    }
+  };
 
   // Re-render clocks every 30 seconds
   const [timeTick, setTimeTick] = useState(0);
@@ -215,31 +274,6 @@ export default function Home() {
         });
       }
 
-      // 3. Batch resolve timezones on Next.js Serverless API Route
-      const uniqueLocations = Array.from(
-        new Set(
-          contactsData.map(c => `${c.city || ''}|${c.country || ''}|${c.location || ''}`)
-        )
-      ).filter(Boolean);
-
-      if (uniqueLocations.length > 0) {
-        try {
-          const res = await fetch("/api/timezones", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ locations: uniqueLocations })
-          });
-          if (res.ok) {
-            const tzMap = await res.json();
-            setTimezoneMap(prev => ({ ...prev, ...tzMap }));
-          }
-        } catch (err) {
-          console.error("Failed to batch resolve timezones:", err);
-        }
-      }
-
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -330,6 +364,54 @@ export default function Home() {
       });
 
       setContacts(contactsWithStatus);
+
+      // 3. Batch resolve timezones asynchronously in the background
+      const uniqueLocations = Array.from(
+        new Set(
+          contactsData.map(c => `${c.city || ''}|${c.country || ''}|${c.location || ''}`)
+        )
+      ).filter(Boolean);
+
+      if (uniqueLocations.length > 0) {
+        let cachedMap: Record<string, string | null> = {};
+        if (typeof window !== "undefined") {
+          const cached = localStorage.getItem("in-touch-timezones");
+          if (cached) {
+            try {
+              cachedMap = JSON.parse(cached);
+            } catch {
+              cachedMap = {};
+            }
+          }
+        }
+
+        const unresolvedLocations = uniqueLocations.filter(loc => !cachedMap[loc]);
+
+        if (unresolvedLocations.length > 0) {
+          fetch("/api/timezones", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ locations: unresolvedLocations })
+          })
+            .then(async (res) => {
+              if (res.ok) {
+                const tzMap = await res.json();
+                setTimezoneMap(prev => {
+                  const newMap = { ...prev, ...tzMap };
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("in-touch-timezones", JSON.stringify(newMap));
+                  }
+                  return newMap;
+                });
+              }
+            })
+            .catch((err) => {
+              console.error("Failed to batch resolve timezones in background:", err);
+            });
+        }
+      }
     } catch (error) {
       console.error("Error loading contacts:", error);
     }
@@ -663,7 +745,7 @@ export default function Home() {
                   return (
                     <div
                       key={contact.id}
-                      onClick={() => setExpandedId(prev => prev === contact.id ? null : contact.id)}
+                      onClick={() => handleSelectContact(expandedId === contact.id ? null : contact.id)}
                       className={`bg-[#0b1120] rounded-lg p-6 opacity-90 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
                         isExpanded 
                           ? "border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
@@ -713,9 +795,18 @@ export default function Home() {
                       </div>
                       <div className="flex gap-2 mt-3">
                         <button
-                          onClick={(e) => { e.stopPropagation(); setActiveContactMenu(contact); }}
-                          className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
-                          title="Reach Out"
+                          onClick={(e) => { e.stopPropagation(); handleCallAction(contact); }}
+                          className="w-10 h-10 flex items-center justify-center text-emerald-400 hover:text-white border border-emerald-500/40 rounded-full hover:border-emerald-500 hover:bg-emerald-500/10 transition-all duration-200 cursor-pointer"
+                          title="Call Contact"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.302a12.01 12.01 0 01-5.907-5.907c-.44-.44-.274-.927.102-1.21l1.293-.97a1.125 1.125 0 00.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleTextAction(contact); }}
+                          className="w-10 h-10 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/40 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 cursor-pointer"
+                          title="Text Contact"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501c1.153-.086 2.294-.21 3.423-.379 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
@@ -723,7 +814,7 @@ export default function Home() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setLogTouchpointContactId(contact.id); }}
-                          className="w-10 h-10 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/40 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 cursor-pointer"
+                          className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
                           title="Log Touchpoint"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -773,7 +864,7 @@ export default function Home() {
                 return (
                   <div
                     key={contact.id}
-                    onClick={() => setExpandedId(prev => prev === contact.id ? null : contact.id)}
+                    onClick={() => handleSelectContact(expandedId === contact.id ? null : contact.id)}
                     className={`bg-[#0b1120] rounded-lg p-6 opacity-75 hover:opacity-100 transition-all relative cursor-pointer select-none border ${
                       isExpanded 
                         ? "border-cyan-500/80 shadow-lg shadow-cyan-950/20 scale-[1.01]" 
@@ -823,9 +914,18 @@ export default function Home() {
                     </div>
                     <div className="flex gap-2 mt-3">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setActiveContactMenu(contact); }}
-                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
-                        title="Reach Out"
+                        onClick={(e) => { e.stopPropagation(); handleCallAction(contact); }}
+                        className="w-10 h-10 flex items-center justify-center text-emerald-400 hover:text-white border border-emerald-500/40 rounded-full hover:border-emerald-500 hover:bg-emerald-500/10 transition-all duration-200 cursor-pointer"
+                        title="Call Contact"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.302a12.01 12.01 0 01-5.907-5.907c-.44-.44-.274-.927.102-1.21l1.293-.97a1.125 1.125 0 00.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleTextAction(contact); }}
+                        className="w-10 h-10 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/40 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 cursor-pointer"
+                        title="Text Contact"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501c1.153-.086 2.294-.21 3.423-.379 1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
@@ -833,7 +933,7 @@ export default function Home() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setLogTouchpointContactId(contact.id); }}
-                        className="w-10 h-10 flex items-center justify-center text-cyan-400 hover:text-white border border-cyan-500/40 rounded-full hover:border-cyan-500 hover:bg-cyan-500/10 transition-all duration-200 cursor-pointer"
+                        className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200 cursor-pointer"
                         title="Log Touchpoint"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -884,10 +984,13 @@ export default function Home() {
         onSuccess={async () => await loadContacts(user.id)}
       />
 
-      {/* Reach Out circular quickmenu modal */}
-      <ReachOutModal
-        contact={activeContactMenu}
-        onClose={() => setActiveContactMenu(null)}
+      {/* Configure Phone Modal */}
+      <ConfigurePhoneModal
+        isOpen={phoneConfigureContact !== null}
+        onClose={() => setPhoneConfigureContact(null)}
+        contact={phoneConfigureContact}
+        userId={user.id}
+        onSuccess={async () => await loadContacts(user.id)}
       />
 
       {/* VCF Instructions Guide Modal */}
@@ -899,13 +1002,14 @@ export default function Home() {
       {/* Contact Profile Details slide-over drawer */}
       <ProfileDrawer
         isOpen={selectedContact !== null}
-        onClose={() => setExpandedId(null)}
+        onClose={() => handleSelectContact(null)}
         contact={selectedContact}
         userId={user.id}
         timezoneMap={timezoneMap}
         onSuccess={async () => await loadContacts(user.id)}
         onLogTouchpoint={(id) => setLogTouchpointContactId(id)}
-        onReachOut={(c) => setActiveContactMenu(c)}
+        onCall={(c) => handleCallAction(c)}
+        onText={(c) => handleTextAction(c)}
         onTogglePin={(id) => handleTogglePin(id)}
       />
 
@@ -929,5 +1033,23 @@ export default function Home() {
         }}
       />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-white flex flex-col items-center gap-3 animate-fadeIn">
+          <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-sm font-semibold tracking-wide text-gray-400">Loading...</span>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

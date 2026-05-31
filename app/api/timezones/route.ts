@@ -90,6 +90,9 @@ const getTimezoneFromLocation = (location?: string | null): string | null => {
   return null;
 };
 
+// Module-level in-memory cache for lookups to optimize performance on warm containers
+const lookupCache = new Map<string, string | null>();
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -102,6 +105,12 @@ export async function POST(request: Request) {
     const result: Record<string, string | null> = {};
 
     locations.forEach((locStr) => {
+      // Check in-memory cache first
+      if (lookupCache.has(locStr)) {
+        result[locStr] = lookupCache.get(locStr)!;
+        return;
+      }
+
       const [city, country, location] = locStr.split("|");
       
       let tz: string | null = null;
@@ -113,6 +122,8 @@ export async function POST(request: Request) {
         tz = getTimezoneFromLocation(location);
       }
 
+      // Save to cache
+      lookupCache.set(locStr, tz);
       result[locStr] = tz;
     });
 
