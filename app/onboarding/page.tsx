@@ -165,6 +165,14 @@ export default function OnboardingPage() {
     }
   }, [loading, user, router]);
 
+  // Scroll to top on wizard step changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, [step]);
+
+
 
 
 
@@ -374,7 +382,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-[#020617] text-white flex flex-col justify-start ${step === "setup" ? "overflow-y-auto" : "sm:justify-center overflow-hidden"} items-center ${step === "welcome" ? "pt-7" : "pt-14"} pb-6 sm:py-6 px-4 relative select-none`}>
+    <div className={`min-h-screen bg-[#020617] text-white flex flex-col justify-start ${step === "setup" ? "overflow-y-auto" : "sm:justify-center overflow-hidden"} items-center ${step === "welcome" ? "pt-3" : "pt-7"} pb-6 sm:py-6 px-4 relative select-none`}>
       {/* Low-opacity subtle glowing backdrops */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
