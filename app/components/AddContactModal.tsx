@@ -231,22 +231,7 @@ export default function AddContactModal({
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                Relationship
-              </label>
-              <select
-                value={relationship}
-                onChange={(e) => setRelationship(e.target.value)}
-                className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-              >
-                {RELATIONSHIPS.map((rel) => (
-                  <option key={rel} value={rel}>
-                    {rel}
-                  </option>
-                ))}
-              </select>
-            </div>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

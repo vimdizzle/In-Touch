@@ -374,7 +374,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-[#020617] text-white flex flex-col justify-start ${step === "setup" ? "overflow-y-auto" : "sm:justify-center overflow-hidden"} items-center pt-14 pb-6 sm:py-6 px-4 relative select-none`}>
+    <div className={`min-h-screen bg-[#020617] text-white flex flex-col justify-start ${step === "setup" ? "overflow-y-auto" : "sm:justify-center overflow-hidden"} items-center ${step === "welcome" ? "pt-7" : "pt-14"} pb-6 sm:py-6 px-4 relative select-none`}>
       {/* Low-opacity subtle glowing backdrops */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
@@ -385,7 +385,7 @@ export default function OnboardingPage() {
           {/* Form Section - Matches Add Contact fields exactly */}
           <div className="bg-[#0b1120]/45 border border-gray-800/80 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6">
             <div>
-              <h3 className="text-2xl font-extrabold text-white tracking-tight mb-2">Add your first 5 contacts</h3>
+              <h3 className="text-2xl font-extrabold text-white tracking-tight mb-2">Add Your First Few Contacts</h3>
               <p className="text-xs text-slate-400">
                 You can add more contacts later.
               </p>
@@ -486,7 +486,7 @@ export default function OnboardingPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {displayedContacts.map((contact) => (
                     <div
                       key={contact.id}
@@ -499,9 +499,7 @@ export default function OnboardingPage() {
                         <div className="min-w-0">
                           <h5 className="font-bold text-white text-[11px] leading-none mb-1.5 truncate">{contact.name}</h5>
                           <div className="flex gap-1.5">
-                            <span className="text-[9px] text-slate-400 font-semibold px-2 py-0.5 bg-slate-900 rounded border border-slate-800 leading-none">
-                              {contact.relationship}
-                            </span>
+
                             <span className="text-[9px] text-cyan-400 font-semibold px-2 py-0.5 bg-slate-900 rounded border border-slate-800 leading-none">
                               {contact.cadence_days}d
                             </span>

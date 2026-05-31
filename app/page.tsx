@@ -35,11 +35,18 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const hasOpenedInSession = useRef(false);
+  const addContactHasOpenedInSession = useRef(false);
 
   // Sync expandedId state with URL contact query param
   useEffect(() => {
     const contactParam = searchParams.get("contact");
     setExpandedId(contactParam);
+  }, [searchParams]);
+
+  // Sync isAddContactOpen state with URL add query param
+  useEffect(() => {
+    const addParam = searchParams.get("add");
+    setIsAddContactOpen(addParam === "true");
   }, [searchParams]);
 
   // Navigate when selecting or deselecting a contact
@@ -57,6 +64,25 @@ function HomeContent() {
         params.delete("contact");
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         setExpandedId(null);
+      }
+    }
+  };
+
+  // Navigate when opening or closing the Add Contact modal
+  const handleToggleAddContact = (open: boolean) => {
+    if (open) {
+      addContactHasOpenedInSession.current = true;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("add", "true");
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    } else {
+      if (addContactHasOpenedInSession.current) {
+        router.back();
+      } else {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("add");
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        setIsAddContactOpen(false);
       }
     }
   };
@@ -334,12 +360,16 @@ function HomeContent() {
             (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
           );
 
-          if (daysSinceLastContact >= contact.cadence_days) {
+          const daysUntilNextDue = contact.cadence_days - daysSinceLastContact;
+          if (daysUntilNextDue < 0) {
             status = "overdue";
-            daysOverdue = daysSinceLastContact - contact.cadence_days;
-          } else if (contact.cadence_days - daysSinceLastContact <= 7) {
+            daysOverdue = Math.abs(daysUntilNextDue);
+          } else if (daysUntilNextDue <= 7) {
             status = "coming_up";
-            daysUntilDue = contact.cadence_days - daysSinceLastContact;
+            daysUntilDue = daysUntilNextDue;
+          } else {
+            status = "on_track";
+            daysUntilDue = daysUntilNextDue;
           }
         }
 
@@ -642,7 +672,7 @@ function HomeContent() {
                 </svg>
               </button>
               <button
-                onClick={() => setIsAddContactOpen(true)}
+                onClick={() => handleToggleAddContact(true)}
                 className="w-10 h-10 flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 text-white rounded-full transition-all duration-200"
                 title="Add Contact"
               >
@@ -718,7 +748,7 @@ function HomeContent() {
         {(comingUpContacts.length > 0 || !searchQuery.trim()) && (
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-white">Get in touch:</h3>
+              <h3 className="text-2xl font-bold text-white">Get in touch</h3>
               <button
                 onClick={() => setComingUpSort(prev => prev === "next_touch" ? "name" : "next_touch")}
                 className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
@@ -779,11 +809,10 @@ function HomeContent() {
                       <div className="mb-3">
                         <h4 className="text-lg font-semibold text-white mb-1">{contact.name}</h4>
                         <p className="text-sm text-gray-400">
-                          {contact.relationship}
-                          {contact.city && ` • ${contact.city}`}
-                          {!contact.city && contact.location && ` • ${contact.location.split(',')[0].trim()}`}
+                          {contact.city || (contact.location ? contact.location.split(',')[0].trim() : '')}
                           {localTimeStr ? ` (${localTimeStr})` : ''}
-                          {` • ${formatCadence(contact.cadence_days)}`}
+                          {(contact.city || contact.location || localTimeStr) ? ` • ` : ''}
+                          {formatCadence(contact.cadence_days)}
                         </p>
                       </div>
                       <div className="mb-4">
@@ -838,7 +867,7 @@ function HomeContent() {
         {(onTrackContacts.length > 0 || !searchQuery.trim()) && (
           <div className="mb-8 animate-fadeIn">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-white">Already in touch:</h3>
+              <h3 className="text-2xl font-bold text-white">Already in touch</h3>
               <button
                 onClick={() => setOnTrackSort(prev => prev === "next_touch" ? "name" : "next_touch")}
                 className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white border border-gray-700 rounded-full hover:border-gray-600 hover:bg-[#111827] transition-all duration-200"
@@ -898,11 +927,10 @@ function HomeContent() {
                     <div className="mb-3">
                       <h4 className="text-lg font-semibold text-white mb-1">{contact.name}</h4>
                       <p className="text-sm text-gray-400">
-                        {contact.relationship}
-                        {contact.city && ` • ${contact.city}`}
-                        {!contact.city && contact.location && ` • ${contact.location.split(',')[0].trim()}`}
+                        {contact.city || (contact.location ? contact.location.split(',')[0].trim() : '')}
                         {localTimeStr ? ` (${localTimeStr})` : ''}
-                        {` • ${formatCadence(contact.cadence_days)}`}
+                        {(contact.city || contact.location || localTimeStr) ? ` • ` : ''}
+                        {formatCadence(contact.cadence_days)}
                       </p>
                     </div>
                     <div className="mb-4">
@@ -954,7 +982,7 @@ function HomeContent() {
       {/* Add Contact Modal/Drawer */}
       <AddContactModal
         isOpen={isAddContactOpen}
-        onClose={() => setIsAddContactOpen(false)}
+        onClose={() => handleToggleAddContact(false)}
         userId={user.id}
         onSuccess={async () => await loadContacts(user.id)}
         onImportVCards={(drafts) => {
@@ -1026,7 +1054,7 @@ function HomeContent() {
             message: `Successfully imported ${imported.length} contact${imported.length !== 1 ? "s" : ""}!`,
           });
           setIsImportReviewOpen(false);
-          setIsAddContactOpen(false);
+          handleToggleAddContact(false);
         }}
         onImportError={(errorMsg) => {
           setImportStatus({ type: "error", message: errorMsg });

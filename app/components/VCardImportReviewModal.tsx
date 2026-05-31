@@ -146,25 +146,8 @@ export default function VCardImportReviewModal({
         </div>
 
         {/* Bulk Edit Panel */}
-        <div className="p-4 bg-[#0d1527] border-b border-gray-850/80 shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-              Bulk Relationship
-            </label>
-            <select
-              value={bulkRelationship}
-              onChange={(e) => applyBulkRelationship(e.target.value)}
-              className="w-full px-3 py-1.5 bg-[#111827] border border-gray-700 rounded-md text-white text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
-            >
-              {RELATIONSHIPS.map((rel) => (
-                <option key={rel} value={rel}>
-                  {rel}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
+        <div className="p-4 bg-[#0d1527] border-b border-gray-850/80 shrink-0">
+          <div className="max-w-md">
             <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
               Bulk Cadence
             </label>
@@ -265,23 +248,8 @@ export default function VCardImportReviewModal({
                   )}
                 </div>
 
-                {/* Single relationship and cadence picker inside the row */}
+                {/* Single cadence picker inside the row */}
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] text-slate-500 font-semibold uppercase">Type:</span>
-                    <select
-                      value={contact.relationship}
-                      onChange={(e) => handleFieldChange(idx, "relationship", e.target.value)}
-                      className="bg-[#111827] border border-gray-700 text-white text-[10px] rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer"
-                    >
-                      {RELATIONSHIPS.map((rel) => (
-                        <option key={rel} value={rel}>
-                          {rel}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   <div className="flex items-center gap-1">
                     <span className="text-[9px] text-slate-500 font-semibold uppercase">Cadence:</span>
                     <select

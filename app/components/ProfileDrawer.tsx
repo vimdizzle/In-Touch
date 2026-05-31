@@ -291,8 +291,7 @@ export default function ProfileDrawer({
               {contact.name}
             </h3>
             <p className="text-sm text-gray-400 mt-1">
-              {contact.relationship}
-              {` • ${formatCadence(contact.cadence_days)}`}
+              {formatCadence(contact.cadence_days)}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -370,22 +369,7 @@ export default function ProfileDrawer({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                  Relationship
-                </label>
-                <select
-                  value={editRelationship}
-                  onChange={(e) => setEditRelationship(e.target.value)}
-                  className="w-full px-4 py-2 bg-[#111827] border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-                >
-                  {RELATIONSHIPS.map((rel) => (
-                    <option key={rel} value={rel}>
-                      {rel}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
