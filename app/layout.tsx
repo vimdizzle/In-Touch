@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "./components/Footer";
+import CookieConsent from "./components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "In Touch",
@@ -24,6 +25,7 @@ export default function RootLayout({
           {children}
         </div>
         <Footer />
+        <CookieConsent />
       </body>
     </html>
   );
